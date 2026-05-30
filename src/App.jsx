@@ -6,6 +6,7 @@ import GrowthMapPage from './pages/GrowthMapPage'
 import NetworkPage from './pages/NetworkPage'
 import WeeklyReviewPage from './pages/WeeklyReviewPage'
 import StabilizerPage from './pages/StabilizerPage'
+import GoalTreePage from './pages/GoalTreePage'
 
 export default function App() {
   const [page, setPage] = useState('today')
@@ -16,11 +17,12 @@ export default function App() {
 
   return (
     <Layout currentPage={page} onNavigate={setPage}>
-      {page === 'today' && <TodayPage onStabilizer={() => setPage('stabilizer')} />}
+      {page === 'today'     && <TodayPage onStabilizer={() => setPage('stabilizer')} />}
+      {page === 'goals'     && <GoalTreePage />}
       {page === 'dashboard' && <DashboardPage />}
-      {page === 'growth' && <GrowthMapPage />}
-      {page === 'network' && <NetworkPage />}
-      {page === 'review' && <WeeklyReviewPage />}
+      {page === 'growth'    && <GrowthMapPage />}
+      {page === 'network'   && <NetworkPage />}
+      {page === 'review'    && <WeeklyReviewPage />}
     </Layout>
   )
 }

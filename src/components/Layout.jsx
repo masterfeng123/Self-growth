@@ -1,7 +1,8 @@
-import { Home, BarChart2, Map, Users, BookOpen, AlertTriangle } from 'lucide-react'
+import { Home, BarChart2, Map, Users, BookOpen, AlertTriangle, GitBranch } from 'lucide-react'
 
 const NAV_ITEMS = [
   { id: 'today',     label: '今日',   icon: Home },
+  { id: 'goals',     label: '任務樹', icon: GitBranch },
   { id: 'dashboard', label: '儀表板', icon: BarChart2 },
   { id: 'growth',    label: '征途',   icon: Map },
   { id: 'network',   label: '人脈',   icon: Users },

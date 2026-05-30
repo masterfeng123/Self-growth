@@ -129,6 +129,70 @@ export const useStore = create(
           profile: { ...state.profile, ...updates },
         })),
 
+      // ── Goal Tree ────────────────────────────────────────
+      // goals: { [id]: GoalNode }
+      // GoalNode: { id, parentId, title, level, pillar, done, notes, createdAt }
+      goals: {},
+      goalRoots: [], // IDs of top-level theme nodes
+
+      addGoalNode: (parentId, title) =>
+        set((state) => {
+          const id = Date.now().toString()
+          const level = parentId === null
+            ? 0
+            : (state.goals[parentId]?.level ?? 0) + 1
+          const node = {
+            id,
+            parentId,
+            title,
+            level,          // 0=主題 1=目標 2=里程碑 3=任務 4=今日行動
+            pillar: null,
+            done: false,
+            notes: '',
+            createdAt: todayStr(),
+          }
+          return {
+            goals: { ...state.goals, [id]: node },
+            goalRoots: parentId === null
+              ? [...state.goalRoots, id]
+              : state.goalRoots,
+          }
+        }),
+
+      updateGoalNode: (id, updates) =>
+        set((state) => ({
+          goals: {
+            ...state.goals,
+            [id]: { ...state.goals[id], ...updates },
+          },
+        })),
+
+      deleteGoalNode: (id) =>
+        set((state) => {
+          // Collect all descendant IDs recursively
+          const toDelete = new Set()
+          const collect = (nodeId) => {
+            toDelete.add(nodeId)
+            Object.values(state.goals).forEach((n) => {
+              if (n.parentId === nodeId) collect(n.id)
+            })
+          }
+          collect(id)
+          const newGoals = { ...state.goals }
+          toDelete.forEach((nid) => delete newGoals[nid])
+          return {
+            goals: newGoals,
+            goalRoots: state.goalRoots.filter((rid) => !toDelete.has(rid)),
+          }
+        }),
+
+      getGoalChildren: (parentId) => {
+        const { goals } = get()
+        return Object.values(goals)
+          .filter((n) => n.parentId === parentId)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      },
+
       getStreak: () => {
         const { dailyLogs } = get()
         let streak = 0
