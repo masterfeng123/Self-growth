@@ -1,4 +1,4 @@
-import { CheckCircle2, Circle, Lock, ChevronRight } from 'lucide-react'
+import { CheckCircle2, Circle, Lock, ChevronRight, MapPin } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
 const PHASES = [
@@ -7,8 +7,10 @@ const PHASES = [
     label: '探索期',
     ageRange: '21–25歲',
     emoji: '🔍',
-    color: 'blue',
-    target: '找到方向，打好基礎',
+    accent: '#60a5fa',
+    accentBg: 'rgba(96,165,250,0.08)',
+    accentBorder: 'rgba(96,165,250,0.25)',
+    target: '找到方向，打好技術基礎',
     milestones: [
       '確定核心技術專精方向',
       '完成第一個有意義的專案',
@@ -23,14 +25,16 @@ const PHASES = [
     label: '起步期',
     ageRange: '25–28歲',
     emoji: '🚀',
-    color: 'purple',
+    accent: '#a78bfa',
+    accentBg: 'rgba(167,139,250,0.08)',
+    accentBorder: 'rgba(167,139,250,0.25)',
     target: '進入頂尖公司或創業，年收破百萬',
     milestones: [
       '進入科技頂尖企業或完成首輪融資',
       '建立個人品牌或代表作',
       '人脈圈擴展至業界導師',
       '副業或斜槓收入起步',
-      '年薪突破100萬',
+      '年薪突破 100 萬',
     ],
     insight: '在這5年，一個「對的公司」可以替代10年的自學。選公司比選薪水重要。',
   },
@@ -39,14 +43,16 @@ const PHASES = [
     label: '深化期',
     ageRange: '28–32歲',
     emoji: '⚡',
-    color: 'amber',
+    accent: '#f59e0b',
+    accentBg: 'rgba(245,158,11,0.08)',
+    accentBorder: 'rgba(245,158,11,0.25)',
     target: '成為領域專家，收入倍增',
     milestones: [
       '在專業領域有可量化的成果',
       '帶領小團隊或重要專案',
       '演講、寫作或教學輸出',
       '投資理財開始複利',
-      '年薪突破300萬',
+      '年薪突破 300 萬',
     ],
     insight: '30歲前的努力是線性的。30歲後若佈局得當，開始指數成長。',
   },
@@ -55,14 +61,16 @@ const PHASES = [
     label: '躍升期',
     ageRange: '32–36歲',
     emoji: '🏔️',
-    color: 'emerald',
+    accent: '#34d399',
+    accentBg: 'rgba(52,211,153,0.08)',
+    accentBorder: 'rgba(52,211,153,0.25)',
     target: '管理或創業，收入規模化',
     milestones: [
       '晉升高管或成立自己的公司/產品',
       '打造可複製的收入模型',
       '建立業界影響力',
-      '主動收入+被動收入雙軌',
-      '年薪突破1000萬',
+      '主動收入 + 被動收入雙軌',
+      '年薪突破 1000 萬',
     ],
     insight: '這個階段看的不是「你做了多少」，而是「你影響了多少人」。',
   },
@@ -71,56 +79,20 @@ const PHASES = [
     label: '衝刺期',
     ageRange: '36–40歲',
     emoji: '🏆',
-    color: 'gold',
-    target: '年薪2500萬，財務自由門口',
+    accent: '#f59e0b',
+    accentBg: 'rgba(245,158,11,0.10)',
+    accentBorder: 'rgba(245,158,11,0.35)',
+    target: '年薪 2500 萬，財務自由門口',
     milestones: [
       '公司或產品達到規模化',
       '多元化收入流穩定',
       '打造能獨立運作的系統',
-      '投資組合產生被動收入300萬+',
-      '🎯 年薪2500萬達成',
+      '投資組合產生被動收入 300 萬+',
+      '🎯 年薪 2500 萬達成',
     ],
     insight: '到了這個時候，2500萬不是終點——那只是你在對的軌道上自然的結果。',
   },
 ]
-
-const COLOR_MAP = {
-  blue: {
-    bg: 'bg-blue-500/10',
-    border: 'border-blue-500/30',
-    text: 'text-blue-400',
-    dot: 'bg-blue-500',
-    badge: 'bg-blue-500/20 text-blue-300',
-  },
-  purple: {
-    bg: 'bg-purple-500/10',
-    border: 'border-purple-500/30',
-    text: 'text-purple-400',
-    dot: 'bg-purple-500',
-    badge: 'bg-purple-500/20 text-purple-300',
-  },
-  amber: {
-    bg: 'bg-amber-500/10',
-    border: 'border-amber-500/30',
-    text: 'text-amber-400',
-    dot: 'bg-amber-500',
-    badge: 'bg-amber-500/20 text-amber-300',
-  },
-  emerald: {
-    bg: 'bg-emerald-500/10',
-    border: 'border-emerald-500/30',
-    text: 'text-emerald-400',
-    dot: 'bg-emerald-500',
-    badge: 'bg-emerald-500/20 text-emerald-300',
-  },
-  gold: {
-    bg: 'bg-gold-500/10',
-    border: 'border-gold-500/50',
-    text: 'text-gold-400',
-    dot: 'bg-gold-500',
-    badge: 'bg-gold-500/20 text-gold-300',
-  },
-}
 
 export default function GrowthMapPage() {
   const { profile, updateProfile } = useStore()
@@ -130,53 +102,73 @@ export default function GrowthMapPage() {
   const birthYear = profile.birthYear || 2003
   const currentAge = currentYear - birthYear
   const yearsToGoal = 40 - currentAge
-  const progressPct = Math.min(100, Math.round(((currentAge - 21) / 19) * 100))
+  const progressPct = Math.min(100, Math.max(0, Math.round(((currentAge - 21) / 19) * 100)))
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
+    <div style={{ maxWidth: 540, margin: '0 auto', padding: '24px 16px 40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
       <div>
-        <h1 className="text-xl font-bold text-gray-100">征途地圖</h1>
-        <p className="text-sm text-gray-500">從今天到 2040，每一步都算數</p>
+        <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#f0f0f4', letterSpacing: '-0.02em' }}>
+          征途地圖
+        </h1>
+        <p style={{ fontSize: '12px', color: '#5e5e68', marginTop: '2px' }}>
+          從今天到 2040，每一步都算數
+        </p>
       </div>
 
       {/* Overall progress */}
       <div className="card glow-gold">
-        <div className="flex items-start justify-between mb-3">
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div>
-            <p className="text-xs text-gray-500">終極目標</p>
-            <p className="text-lg font-bold text-gold-400">年薪 2,500 萬</p>
+            <p style={{ fontSize: '11px', color: '#5e5e68' }}>終極目標</p>
+            <p style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b', letterSpacing: '-0.02em', marginTop: '2px' }}>
+              年薪 2,500 萬
+            </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs text-gray-500">距離目標</p>
-            <p className="text-lg font-bold text-gray-200">{yearsToGoal} 年</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ fontSize: '11px', color: '#5e5e68' }}>距離目標</p>
+            <p style={{ fontSize: '20px', fontWeight: 700, color: '#f0f0f4', letterSpacing: '-0.02em', marginTop: '2px' }}>
+              {yearsToGoal} 年
+            </p>
           </div>
         </div>
-        <div className="w-full bg-surface-600 rounded-full h-3 mb-2">
-          <div
-            className="bg-gradient-to-r from-blue-500 via-purple-500 to-gold-500 h-3 rounded-full transition-all duration-1000"
-            style={{ width: `${progressPct}%` }}
-          />
+        <div style={{ background: '#111113', borderRadius: '99px', height: '5px', overflow: 'hidden', marginBottom: '8px' }}>
+          <div style={{
+            height: '100%',
+            width: `${progressPct}%`,
+            background: 'linear-gradient(90deg, #60a5fa 0%, #a78bfa 40%, #f59e0b 100%)',
+            borderRadius: '99px',
+            transition: 'width 1s cubic-bezier(0.16,1,0.3,1)',
+          }} />
         </div>
-        <div className="flex justify-between text-xs text-gray-500">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#5e5e68' }}>
           <span>21歲 出發</span>
-          <span className="text-gray-300 font-medium">{currentAge}歲（你在這裡）</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#c4c4cc' }}>
+            <MapPin size={10} />{currentAge}歲
+          </span>
           <span>40歲 🏆</span>
         </div>
       </div>
 
-      {/* Current phase selector */}
+      {/* Phase selector */}
       <div className="card">
-        <p className="text-xs text-gray-500 mb-2">你目前在哪個階段？</p>
-        <div className="flex gap-2 flex-wrap">
+        <p style={{ fontSize: '11px', color: '#5e5e68', marginBottom: '10px' }}>你目前在哪個階段？</p>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {PHASES.map((p) => (
             <button
               key={p.id}
               onClick={() => updateProfile({ currentPhase: p.id })}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                currentPhase === p.id
-                  ? `${COLOR_MAP[p.color].badge} border-transparent`
-                  : 'border-surface-600 text-gray-500 hover:text-gray-300'
-              }`}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '4px 10px', borderRadius: '99px', fontSize: '12px',
+                border: '1px solid',
+                borderColor: currentPhase === p.id ? p.accentBorder : 'rgba(255,255,255,0.07)',
+                color: currentPhase === p.id ? p.accent : '#5e5e68',
+                background: currentPhase === p.id ? p.accentBg : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 150ms cubic-bezier(0.4,0,0.2,1)',
+                fontWeight: currentPhase === p.id ? 500 : 400,
+              }}
             >
               {p.emoji} {p.label}
             </button>
@@ -185,9 +177,8 @@ export default function GrowthMapPage() {
       </div>
 
       {/* Phase cards */}
-      <div className="space-y-4">
-        {PHASES.map((phase, idx) => {
-          const c = COLOR_MAP[phase.color]
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {PHASES.map((phase) => {
           const isCurrent = phase.id === currentPhase
           const isPast = phase.id < currentPhase
           const isFuture = phase.id > currentPhase
@@ -195,108 +186,105 @@ export default function GrowthMapPage() {
           return (
             <div
               key={phase.id}
-              className={`rounded-xl border-2 transition-all duration-200 overflow-hidden ${
-                isCurrent
-                  ? `${c.bg} ${c.border}`
-                  : isPast
-                  ? 'border-surface-600 bg-surface-800/50 opacity-70'
-                  : 'border-surface-700 bg-surface-800/30 opacity-60'
-              }`}
+              style={{
+                borderRadius: '10px',
+                border: '1px solid',
+                borderColor: isCurrent ? phase.accentBorder : 'rgba(255,255,255,0.07)',
+                background: isCurrent ? phase.accentBg : 'transparent',
+                padding: '16px',
+                opacity: isFuture ? 0.5 : isPast ? 0.75 : 1,
+                transition: 'all 200ms cubic-bezier(0.4,0,0.2,1)',
+              }}
             >
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-3 mb-1">
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-xl">{phase.emoji}</span>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className={`text-sm font-bold ${isCurrent ? c.text : 'text-gray-400'}`}>
-                          {phase.label}
-                        </h3>
-                        {isCurrent && (
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
-                            ← 你在這裡
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-gray-500">{phase.ageRange}</p>
-                    </div>
-                  </div>
-                  {isFuture && <Lock size={14} className="text-gray-600 mt-0.5 shrink-0" />}
-                </div>
-
-                <p className={`text-xs font-medium mb-3 ${isCurrent ? 'text-gray-300' : 'text-gray-500'}`}>
-                  目標：{phase.target}
-                </p>
-
-                <ul className="space-y-2">
-                  {phase.milestones.map((m, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <div className="mt-0.5 shrink-0">
-                        {isPast ? (
-                          <CheckCircle2 size={13} className="text-emerald-400" />
-                        ) : isCurrent ? (
-                          <Circle size={13} className={c.text} />
-                        ) : (
-                          <Circle size={13} className="text-gray-600" />
-                        )}
-                      </div>
-                      <span className={`text-xs ${isCurrent ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {m}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '8px' }}>
+                <span style={{ fontSize: '18px', flexShrink: 0 }}>{phase.emoji}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: '13px', fontWeight: isCurrent ? 600 : 500,
+                      color: isCurrent ? phase.accent : '#909098',
+                    }}>
+                      {phase.label}
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#5e5e68' }}>{phase.ageRange}</span>
+                    {isCurrent && (
+                      <span style={{
+                        fontSize: '10px', padding: '2px 7px', borderRadius: '99px',
+                        background: phase.accentBg, border: `1px solid ${phase.accentBorder}`,
+                        color: phase.accent, fontWeight: 500,
+                      }}>
+                        你在這裡
                       </span>
-                    </li>
-                  ))}
-                </ul>
-
-                {isCurrent && (
-                  <div className={`mt-4 pt-3 border-t ${c.border} ${c.bg} -mx-4 -mb-4 px-4 pb-4`}>
-                    <p className="text-xs text-gray-400 italic">💬 {phase.insight}</p>
+                    )}
                   </div>
-                )}
+                  <p style={{ fontSize: '11px', color: '#5e5e68', marginTop: '2px' }}>
+                    目標：{phase.target}
+                  </p>
+                </div>
+                {isFuture && <Lock size={13} style={{ color: '#5e5e68', flexShrink: 0 }} />}
               </div>
+
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '7px', paddingLeft: '2px' }}>
+                {phase.milestones.map((m, i) => (
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                    <span style={{ flexShrink: 0, marginTop: '1px' }}>
+                      {isPast
+                        ? <CheckCircle2 size={12} style={{ color: '#34d399' }} />
+                        : <Circle size={12} style={{ color: isCurrent ? phase.accent : '#5e5e68' }} />
+                      }
+                    </span>
+                    <span style={{ fontSize: '12px', color: isCurrent ? '#c4c4cc' : '#5e5e68' }}>
+                      {m}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              {isCurrent && (
+                <div style={{
+                  marginTop: '14px', paddingTop: '12px',
+                  borderTop: `1px solid ${phase.accentBorder}`,
+                }}>
+                  <p style={{ fontSize: '12px', color: '#909098', fontStyle: 'italic', lineHeight: 1.6 }}>
+                    💬 {phase.insight}
+                  </p>
+                </div>
+              )}
             </div>
           )
         })}
       </div>
 
-      {/* Next 90 days box */}
-      <div className="card border-gold-500/30">
-        <h2 className="text-sm font-semibold text-gold-400 mb-2">⚡ 接下來90天的聚焦</h2>
-        <p className="text-xs text-gray-400 mb-3">
-          基於你目前在「{PHASES[currentPhase - 1]?.label}」階段，你最需要的是：
+      {/* 90-day focus */}
+      <div className="card" style={{ borderColor: 'rgba(245,158,11,0.2)' }}>
+        <p style={{ fontSize: '12px', fontWeight: 600, color: '#f59e0b', marginBottom: '8px' }}>
+          ⚡ 接下來 90 天的聚焦
         </p>
-        <ul className="space-y-2">
-          {currentPhase === 1 && [
+        <p style={{ fontSize: '12px', color: '#5e5e68', marginBottom: '10px' }}>
+          基於你目前在「{PHASES[currentPhase - 1]?.label}」階段，最需要：
+        </p>
+        <ul style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {(currentPhase === 1 ? [
             '每天至少1小時深度學習技術核心',
             '每週主動認識1位業界人士',
             '開始打造第一個可展示的作品',
-          ].map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-gray-300">
-              <ChevronRight size={12} className="text-gold-400 mt-0.5 shrink-0" />
-              {item}
-            </li>
-          ))}
-          {currentPhase === 2 && [
+          ] : currentPhase === 2 ? [
             '鎖定目標公司並打進去',
             '確立個人品牌的核心主題',
             '找到一位願意指導你的導師',
-          ].map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-gray-300">
-              <ChevronRight size={12} className="text-gold-400 mt-0.5 shrink-0" />
-              {item}
-            </li>
-          ))}
-          {currentPhase >= 3 && [
+          ] : [
             '打造可量化的專業成果',
             '開始輸出：寫作、演講、教學',
             '建立被動收入的第一塊磚',
-          ].map((item, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-gray-300">
-              <ChevronRight size={12} className="text-gold-400 mt-0.5 shrink-0" />
-              {item}
+          ]).map((item, i) => (
+            <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+              <ChevronRight size={12} style={{ color: '#f59e0b', marginTop: '2px', flexShrink: 0 }} />
+              <span style={{ fontSize: '12px', color: '#c4c4cc' }}>{item}</span>
             </li>
           ))}
         </ul>
       </div>
+
     </div>
   )
 }

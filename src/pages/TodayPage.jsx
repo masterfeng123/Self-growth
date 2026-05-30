@@ -3,10 +3,10 @@ import { CheckCircle2, Circle, ChevronDown, ChevronUp, Flame, Target, Zap } from
 import { useStore, PILLARS, PILLAR_COLORS } from '../store/useStore'
 
 const MOODS = [
-  { value: 'great', label: '很好', emoji: '🔥' },
-  { value: 'good', label: '不錯', emoji: '😊' },
+  { value: 'great',   label: '很好', emoji: '🔥' },
+  { value: 'good',    label: '不錯', emoji: '😊' },
   { value: 'neutral', label: '普通', emoji: '😐' },
-  { value: 'rough', label: '辛苦', emoji: '😔' },
+  { value: 'rough',   label: '辛苦', emoji: '😔' },
   { value: 'crashed', label: '崩潰', emoji: '💔' },
 ]
 
@@ -15,47 +15,66 @@ function PillarCard({ pillar, data, onToggle, onUpdate }) {
   const colors = PILLAR_COLORS[pillar.color]
 
   return (
-    <div
-      className={`pillar-card ${data.done ? 'pillar-done border-2' : 'pillar-pending border-2'} ${colors.border}`}
-    >
+    <div className={`pillar-card ${data.done ? 'pillar-done' : 'pillar-pending'}`}>
       <div className="flex items-center gap-3">
         <button
           onClick={onToggle}
-          className="shrink-0 text-gray-400 hover:text-white transition-colors"
+          style={{ color: data.done ? undefined : '#5e5e68', transition: 'color 150ms' }}
         >
-          {data.done ? (
-            <CheckCircle2 size={22} className={colors.text} />
-          ) : (
-            <Circle size={22} className="text-gray-500" />
-          )}
+          {data.done
+            ? <CheckCircle2 size={20} className={colors.text} />
+            : <Circle size={20} style={{ color: '#5e5e68' }} />
+          }
         </button>
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-base">{pillar.emoji}</span>
-            <span className={`text-sm font-semibold ${data.done ? colors.text : 'text-gray-200'}`}>
+            <span style={{ fontSize: '15px' }}>{pillar.emoji}</span>
+            <span style={{
+              fontSize: '13px',
+              fontWeight: data.done ? 500 : 400,
+              color: data.done ? '#f0f0f4' : '#c4c4cc',
+              transition: 'all 150ms',
+            }}>
               {pillar.label}
             </span>
           </div>
-          <p className="text-xs text-gray-500 mt-0.5">{pillar.desc}</p>
+          <p style={{ fontSize: '11px', color: '#5e5e68', marginTop: '2px' }}>
+            {pillar.desc}
+          </p>
         </div>
 
         {data.done && (
-          <span className={`text-xs font-medium ${colors.text} bg-transparent border ${colors.border} px-2 py-0.5 rounded-full`}>
+          <span className={`text-xs font-medium ${colors.text}`} style={{
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid rgba(255,255,255,0.08)',
+            padding: '2px 8px',
+            borderRadius: '99px',
+            fontSize: '11px',
+          }}>
             {data[pillar.field]} {pillar.unit}
           </span>
         )}
 
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-gray-500 hover:text-gray-300 transition-colors"
+          style={{ color: '#5e5e68', transition: 'color 150ms' }}
+          onMouseEnter={e => e.currentTarget.style.color = '#909098'}
+          onMouseLeave={e => e.currentTarget.style.color = '#5e5e68'}
         >
-          {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       </div>
 
       {expanded && (
-        <div className="mt-3 pt-3 border-t border-surface-600 space-y-3">
+        <div style={{
+          marginTop: '12px',
+          paddingTop: '12px',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px',
+        }}>
           <div>
             <label className="label">{pillar.unit}</label>
             <input
@@ -63,7 +82,8 @@ function PillarCard({ pillar, data, onToggle, onUpdate }) {
               min="0"
               value={data[pillar.field] || 0}
               onChange={(e) => onUpdate({ [pillar.field]: parseInt(e.target.value) || 0 })}
-              className="input w-28"
+              className="input"
+              style={{ width: '96px' }}
             />
           </div>
           <div>
@@ -89,83 +109,93 @@ export default function TodayPage({ onStabilizer }) {
 
   const today = new Date()
   const dateLabel = today.toLocaleDateString('zh-TW', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'long',
+    month: 'long', day: 'numeric', weekday: 'long',
   })
 
   const pillarKeys = Object.keys(PILLARS)
   const donePillars = pillarKeys.filter((k) => log.pillars[k]?.done).length
   const progress = Math.round((donePillars / pillarKeys.length) * 100)
 
-  const handleComplete = () => {
-    completeTodayLog()
-  }
-
   const hours = today.getHours()
-  const greeting =
-    hours < 12 ? '早安，戰士' : hours < 18 ? '午後繼續衝' : '晚上也不放棄'
+  const greeting = hours < 12 ? '早安，戰士' : hours < 18 ? '午後繼續衝' : '晚上也不放棄'
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6 space-y-5">
+    <div style={{ maxWidth: 520, margin: '0 auto', padding: '24px 16px 40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-xs text-gray-500 mb-0.5">{dateLabel}</p>
-          <h1 className="text-xl font-bold text-gray-100">{greeting} 👊</h1>
+          <p style={{ fontSize: '11px', color: '#5e5e68', marginBottom: '3px', letterSpacing: '0.02em' }}>
+            {dateLabel}
+          </p>
+          <h1 style={{ fontSize: '20px', fontWeight: 600, color: '#f0f0f4', letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+            {greeting} 👊
+          </h1>
         </div>
-        <div className="flex items-center gap-1.5 bg-surface-800 border border-surface-600 px-3 py-1.5 rounded-full">
-          <Flame size={14} className="text-orange-400" />
-          <span className="text-sm font-semibold text-orange-400">{streak}</span>
-          <span className="text-xs text-gray-500">天連線</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '5px',
+          background: '#161618', border: '1px solid #242729',
+          padding: '5px 11px', borderRadius: '99px',
+        }}>
+          <Flame size={13} style={{ color: '#fb923c' }} />
+          <span style={{ fontSize: '14px', fontWeight: 600, color: '#fb923c' }}>{streak}</span>
+          <span style={{ fontSize: '11px', color: '#5e5e68' }}>天</span>
         </div>
       </div>
 
-      {/* Progress overview */}
+      {/* Progress */}
       <div className="card">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-300">今日完成度</span>
-          <span className="text-lg font-bold text-gold-400">{progress}%</span>
+        <div className="flex items-center justify-between" style={{ marginBottom: '10px' }}>
+          <span style={{ fontSize: '12px', color: '#909098', fontWeight: 500 }}>今日完成度</span>
+          <span style={{ fontSize: '20px', fontWeight: 700, color: '#f59e0b', letterSpacing: '-0.02em' }}>
+            {progress}<span style={{ fontSize: '12px', fontWeight: 400 }}>%</span>
+          </span>
         </div>
-        <div className="w-full bg-surface-600 rounded-full h-2">
-          <div
-            className="bg-gold-500 h-2 rounded-full transition-all duration-500"
-            style={{ width: `${progress}%` }}
-          />
+        <div style={{ background: '#111113', borderRadius: '99px', height: '4px', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${progress}%`,
+            background: 'linear-gradient(90deg, #f59e0b, #fbbf24)',
+            borderRadius: '99px',
+            transition: 'width 600ms cubic-bezier(0.16,1,0.3,1)',
+          }} />
         </div>
-        <p className="text-xs text-gray-500 mt-1.5">
+        <p style={{ fontSize: '11px', color: '#5e5e68', marginTop: '6px' }}>
           {donePillars}/{pillarKeys.length} 支柱完成
           {log.completed && ' · ✅ 今日已結算'}
         </p>
       </div>
 
-      {/* Energy level */}
+      {/* Energy */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-3">
-          <Zap size={14} className="text-gold-400" />
-          <label className="text-sm font-medium text-gray-300">
-            今日能量值 <span className="text-gold-400 font-bold">{log.energy}</span>/10
-          </label>
+        <div className="flex items-center gap-2" style={{ marginBottom: '12px' }}>
+          <Zap size={13} style={{ color: '#f59e0b' }} />
+          <span style={{ fontSize: '12px', fontWeight: 500, color: '#909098' }}>
+            今日能量值
+          </span>
+          <span style={{ fontSize: '18px', fontWeight: 700, color: '#f59e0b', marginLeft: 'auto', letterSpacing: '-0.02em' }}>
+            {log.energy}<span style={{ fontSize: '11px', color: '#5e5e68', fontWeight: 400 }}>/10</span>
+          </span>
         </div>
         <input
-          type="range"
-          min="1"
-          max="10"
+          type="range" min="1" max="10"
           value={log.energy}
           onChange={(e) => updateTodayLog({ energy: parseInt(e.target.value) })}
-          className="w-full accent-amber-400"
+          style={{ width: '100%', accentColor: '#f59e0b', cursor: 'pointer' }}
         />
-        <div className="flex justify-between text-xs text-gray-600 mt-1">
-          <span>耗竭</span>
-          <span>滿血</span>
+        <div className="flex justify-between" style={{ marginTop: '4px' }}>
+          <span style={{ fontSize: '10px', color: '#5e5e68' }}>耗竭</span>
+          <span style={{ fontSize: '10px', color: '#5e5e68' }}>滿血</span>
         </div>
       </div>
 
-      {/* Today's one focus */}
+      {/* Focus */}
       <div className="card">
-        <div className="flex items-center gap-2 mb-2">
-          <Target size={14} className="text-gold-400" />
-          <label className="text-sm font-medium text-gray-300">今天最重要的一件事</label>
+        <div className="flex items-center gap-2" style={{ marginBottom: '10px' }}>
+          <Target size={13} style={{ color: '#f59e0b' }} />
+          <span style={{ fontSize: '12px', fontWeight: 500, color: '#909098' }}>
+            今天最重要的一件事
+          </span>
         </div>
         <input
           type="text"
@@ -176,12 +206,10 @@ export default function TodayPage({ onStabilizer }) {
         />
       </div>
 
-      {/* 4 Pillars */}
+      {/* Pillars */}
       <div>
-        <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-          四大支柱
-        </h2>
-        <div className="space-y-3">
+        <p className="section-title" style={{ marginBottom: '10px' }}>四大支柱</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {pillarKeys.map((key) => (
             <PillarCard
               key={key}
@@ -195,19 +223,24 @@ export default function TodayPage({ onStabilizer }) {
       </div>
 
       {/* Mood + Reflection */}
-      <div className="card space-y-4">
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div>
           <label className="label">今日心情</label>
-          <div className="flex gap-2 flex-wrap">
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {MOODS.map((m) => (
               <button
                 key={m.value}
                 onClick={() => updateTodayLog({ mood: m.value })}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-all ${
-                  log.mood === m.value
-                    ? 'bg-surface-600 border-gray-400 text-gray-100'
-                    : 'border-surface-600 text-gray-400 hover:border-gray-500'
-                }`}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  padding: '5px 10px', borderRadius: '99px', fontSize: '12px',
+                  border: '1px solid',
+                  borderColor: log.mood === m.value ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
+                  color: log.mood === m.value ? '#f0f0f4' : '#5e5e68',
+                  background: log.mood === m.value ? '#212124' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 150ms cubic-bezier(0.4,0,0.2,1)',
+                }}
               >
                 {m.emoji} {m.label}
               </button>
@@ -227,17 +260,21 @@ export default function TodayPage({ onStabilizer }) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-3">
+      <div style={{ display: 'flex', gap: '8px' }}>
         {!log.completed ? (
           <button
-            onClick={handleComplete}
+            onClick={completeTodayLog}
             disabled={donePillars === 0}
-            className="flex-1 btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="btn-primary"
+            style={{ flex: 1 }}
           >
             ✅ 結算今日
           </button>
         ) : (
-          <div className="flex-1 text-center py-2.5 text-sm text-green-400 font-medium">
+          <div style={{
+            flex: 1, textAlign: 'center', padding: '8px',
+            fontSize: '13px', color: '#4ade80', fontWeight: 500,
+          }}>
             🎉 今日已完成結算！
           </div>
         )}
@@ -245,6 +282,7 @@ export default function TodayPage({ onStabilizer }) {
           需要穩一下
         </button>
       </div>
+
     </div>
   )
 }

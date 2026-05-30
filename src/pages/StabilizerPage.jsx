@@ -14,14 +14,14 @@ const TINY_ACTIONS = [
 ]
 
 function BreathingExercise() {
-  const [phase, setPhase] = useState('inhale') // inhale | hold | exhale
+  const [phase, setPhase] = useState('inhale')
   const [count, setCount] = useState(4)
   const [active, setActive] = useState(false)
 
   const PHASES = {
-    inhale: { label: '吸氣', duration: 4, next: 'hold', color: 'border-blue-400' },
-    hold: { label: '屏住', duration: 4, next: 'exhale', color: 'border-purple-400' },
-    exhale: { label: '呼氣', duration: 6, next: 'inhale', color: 'border-teal-400' },
+    inhale: { label: '吸氣', duration: 4, next: 'hold',   color: '#60a5fa' },
+    hold:   { label: '屏住', duration: 4, next: 'exhale', color: '#a78bfa' },
+    exhale: { label: '呼氣', duration: 6, next: 'inhale', color: '#34d399' },
   }
 
   useEffect(() => {
@@ -36,34 +36,45 @@ function BreathingExercise() {
     }
   }, [active, count, phase])
 
+  const current = PHASES[phase]
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
       <div
-        className={`w-28 h-28 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-1000 ${
-          active ? PHASES[phase].color : 'border-gray-600'
-        } ${active ? 'breathe-circle' : ''}`}
+        className={active ? 'breathe-circle' : ''}
+        style={{
+          width: 100, height: 100, borderRadius: '50%',
+          border: `3px solid ${active ? current.color : 'rgba(255,255,255,0.15)'}`,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          transition: 'border-color 500ms',
+        }}
       >
-        <span className="text-2xl font-bold text-gray-200">{active ? count : ''}</span>
-        <span className="text-sm text-gray-400">{active ? PHASES[phase].label : '開始'}</span>
+        <span style={{ fontSize: '24px', fontWeight: 700, color: active ? current.color : '#5e5e68' }}>
+          {active ? count : ''}
+        </span>
+        <span style={{ fontSize: '12px', color: active ? current.color : '#5e5e68', marginTop: '2px' }}>
+          {active ? current.label : '開始'}
+        </span>
       </div>
 
       <button
         onClick={() => {
-          if (!active) {
-            setPhase('inhale')
-            setCount(4)
-          }
+          if (!active) { setPhase('inhale'); setCount(4) }
           setActive(!active)
         }}
-        className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-          active
-            ? 'bg-gray-600 text-gray-200 hover:bg-gray-500'
-            : 'bg-teal-600 text-white hover:bg-teal-500'
-        }`}
+        style={{
+          padding: '8px 20px', borderRadius: '99px', fontSize: '13px', fontWeight: 500,
+          border: 'none', cursor: 'pointer',
+          background: active ? 'rgba(255,255,255,0.1)' : 'rgba(52,211,153,0.2)',
+          color: active ? '#c4c4cc' : '#34d399',
+          transition: 'all 200ms',
+        }}
       >
         {active ? '暫停' : '開始呼吸練習'}
       </button>
-      <p className="text-xs text-gray-500">4-4-6 呼吸法 · 激活副交感神經</p>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
+        4-4-6 呼吸法 · 激活副交感神經
+      </p>
     </div>
   )
 }
@@ -84,83 +95,126 @@ export default function StabilizerPage({ onExit }) {
     '崩潰不是失敗，是你的系統在告訴你需要充電',
   ].filter(Boolean).slice(0, 3)
 
+  const sectionStyle = {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '12px',
+    padding: '20px',
+    width: '100%',
+  }
+
   return (
-    <div className="min-h-screen bg-stabilizer flex flex-col">
-      <div className="flex items-center p-5">
+    <div className="bg-stabilizer" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+
+      {/* Back button */}
+      <div style={{ padding: '20px' }}>
         <button
           onClick={onExit}
-          className="flex items-center gap-2 text-teal-300 hover:text-white transition-colors"
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            color: 'rgba(52,211,153,0.8)', background: 'none', border: 'none',
+            fontSize: '13px', cursor: 'pointer', transition: 'color 150ms',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = '#34d399'}
+          onMouseLeave={e => e.currentTarget.style.color = 'rgba(52,211,153,0.8)'}
         >
-          <ArrowLeft size={16} />
-          <span className="text-sm">回到征途</span>
+          <ArrowLeft size={15} />
+          回到征途
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-start px-6 pb-10 max-w-sm mx-auto w-full space-y-8">
-        {/* Main message */}
-        <div className="text-center pt-4">
-          <div className="w-14 h-14 rounded-full bg-teal-500/20 border border-teal-400/30 flex items-center justify-center mx-auto mb-4">
-            <Heart size={24} className="text-teal-300" />
+      {/* Content */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        padding: '0 20px 48px', maxWidth: 400, margin: '0 auto', width: '100%', gap: '20px',
+      }}>
+
+        {/* Hero */}
+        <div style={{ textAlign: 'center', paddingTop: '8px' }}>
+          <div style={{
+            width: 52, height: 52, borderRadius: '50%',
+            background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+          }}>
+            <Heart size={22} style={{ color: '#34d399' }} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">你現在安全了</h1>
-          <p className="text-teal-200/80 text-sm leading-relaxed">
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: '8px' }}>
+            你現在安全了
+          </h1>
+          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.7 }}>
             崩潰不是弱點，是你的神經系統在保護你。<br />
             先照顧自己，進步可以等一會兒。
           </p>
         </div>
 
-        {/* What you've already done */}
-        <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 size={14} className="text-teal-400" />
-            <h2 className="text-sm font-semibold text-teal-300">你已經做到的事</h2>
+        {/* Achievements */}
+        <div style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <CheckCircle2 size={13} style={{ color: '#34d399' }} />
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#34d399', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              你已經做到的事
+            </p>
           </div>
-          <ul className="space-y-2.5">
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {achievements.map((a, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-200">
-                <span className="text-teal-400 shrink-0">·</span>
+              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>
+                <span style={{ color: '#34d399', flexShrink: 0 }}>·</span>
                 {a}
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Breathing exercise */}
-        <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6">
-          <div className="flex items-center gap-2 mb-4 justify-center">
-            <Wind size={14} className="text-blue-400" />
-            <h2 className="text-sm font-semibold text-blue-300">先呼吸一下</h2>
+        {/* Breathing */}
+        <div style={{ ...sectionStyle, textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', marginBottom: '16px' }}>
+            <Wind size={13} style={{ color: '#60a5fa' }} />
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#60a5fa', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              先呼吸一下
+            </p>
           </div>
           <BreathingExercise />
         </div>
 
         {/* Tiny action */}
-        <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <Zap size={14} className="text-gold-400" />
-            <h2 className="text-sm font-semibold text-gold-300">一個微小的行動</h2>
+        <div style={sectionStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '10px' }}>
+            <Zap size={13} style={{ color: '#f59e0b' }} />
+            <p style={{ fontSize: '12px', fontWeight: 600, color: '#f59e0b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+              一個微小的行動
+            </p>
           </div>
-          <p className="text-sm text-gray-200 leading-relaxed">
+          <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.7 }}>
             {randomAction}
           </p>
-          <p className="text-xs text-gray-500 mt-2">不需要做更多。這一件就夠了。</p>
-        </div>
-
-        {/* Reframe */}
-        <div className="w-full text-center">
-          <p className="text-xs text-gray-400 italic leading-relaxed">
-            「所有大人物都有過這樣的夜晚。<br />
-            區別不在於他們沒崩潰，<br />
-            而在於崩潰後他們選擇了繼續。」
+          <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)', marginTop: '6px' }}>
+            不需要做更多。這一件就夠了。
           </p>
         </div>
 
+        {/* Quote */}
+        <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', textAlign: 'center', lineHeight: 1.8 }}>
+          「所有大人物都有過這樣的夜晚。<br />
+          區別不在於他們沒崩潰，<br />
+          而在於崩潰後他們選擇了繼續。」
+        </p>
+
+        {/* CTA */}
         <button
           onClick={onExit}
-          className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-semibold rounded-xl transition-colors text-sm"
+          style={{
+            width: '100%', height: 44, borderRadius: '10px',
+            background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)',
+            color: '#34d399', fontSize: '14px', fontWeight: 600,
+            cursor: 'pointer', transition: 'all 200ms',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(52,211,153,0.22)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(52,211,153,0.15)'}
         >
           我準備好繼續了 →
         </button>
+
       </div>
     </div>
   )
