@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-growth 個人成長管理系統</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+</head>
+<body>
+
+<nav>
+  <span class="logo">🌱 Self-growth</span>
+  <a class="active" data-page="dashboard">今日</a>
+  <a data-page="goals">目標</a>
+  <a data-page="habits">習慣</a>
+  <a data-page="journal">日記</a>
+  <a data-page="achievements">成就</a>
+  <a data-page="weekly">週報</a>
+  <a data-page="projects">專案</a>
+  <a data-page="debuglog">Debug Log</a>
+  <a data-page="calendar">行事曆</a>
+  <div id="nav-level" class="nav-level" style="display:none">
+    <span id="nav-level-text"></span>
+    <div class="nav-xp-track"><div id="nav-xp-fill" class="nav-xp-fill"></div></div>
+  </div>
+
+  <!-- Usage 下拉 -->
+  <div class="usage-dropdown-wrap" id="usage-wrap">
+    <button class="usage-trigger" onclick="toggleUsageDropdown()" id="usage-trigger">
+      <span class="usage-dot" id="usage-dot"></span>
+      Usage
+      <span class="usage-caret">▾</span>
+    </button>
+    <div class="usage-panel" id="usage-panel">
+      <div class="usage-panel-title">本週 API 使用量</div>
+
+      <!-- Gemini -->
+      <div class="usage-section">
+        <div class="usage-service-row">
+          <span class="usage-service-name">Google Gemini</span>
+          <span class="usage-badge" id="gemini-status-badge"></span>
+        </div>
+        <div class="usage-stat-row">
+          <span class="usage-label">本週呼叫</span>
+          <span class="usage-val" id="gemini-week-calls">—</span>
+        </div>
+        <div class="usage-stat-row">
+          <span class="usage-label">今日呼叫</span>
+          <span class="usage-val" id="gemini-today-calls">—</span>
+        </div>
+        <div class="usage-stat-row">
+          <span class="usage-label">本週 Tokens</span>
+          <span class="usage-val" id="gemini-tokens">—</span>
+        </div>
+      </div>
+
+      <div class="usage-divider"></div>
+
+      <!-- Claude -->
+      <div class="usage-section">
+        <div class="usage-service-row">
+          <span class="usage-service-name">Claude AI</span>
+          <button class="usage-refresh-btn" onclick="refreshClaudeUsage()" id="claude-refresh-btn" title="從 claude.ai 抓取">↻ 更新</button>
+        </div>
+        <div class="usage-stat-row" id="claude-live-row" style="display:none">
+          <span class="usage-label">本週用量</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div class="usage-bar-wrap">
+              <div class="usage-bar-fill" id="claude-bar-fill"></div>
+            </div>
+            <span class="usage-val" id="claude-pct">—</span>
+          </div>
+        </div>
+        <div class="usage-stat-row" id="claude-plan-row" style="display:none">
+          <span class="usage-label">方案</span>
+          <span class="usage-val" id="claude-plan">—</span>
+        </div>
+        <div class="usage-stat-row" id="claude-reset-row" style="display:none">
+          <span class="usage-label">重置時間</span>
+          <span class="usage-val" id="claude-reset">—</span>
+        </div>
+        <div id="claude-session-hint" class="usage-hint" style="display:none">
+          需設定 Session Key，請查看說明
+        </div>
+        <div id="claude-status-msg" class="usage-hint"></div>
+      </div>
+
+      <div style="text-align:center;margin-top:.6rem">
+        <span id="usage-week-range" style="font-size:.7rem;color:var(--text-muted)"></span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main>
+
+  <!-- ── 今日頁 ── -->
+  <div id="dashboard" class="page active">
+
+    <!-- 每日挑戰英雄卡 -->
+    <div id="daily-card" class="daily-card">
+      <div class="daily-card-top">
+        <!-- 等級 + XP 欄 -->
+        <div class="level-row">
+          <span id="level-badge" class="level-badge"></span>
+          <div class="xp-bar-wrap">
+            <div class="xp-track"><div id="xp-fill" class="xp-fill"></div></div>
+            <span id="xp-label" class="xp-label"></span>
+          </div>
+          <div id="streak-badge" class="streak-hero"></div>
+        </div>
+      </div>
+
+      <div class="daily-card-body" id="daily-card-body">
+        <div class="loading-pulse">載入今日挑戰中...</div>
+      </div>
+    </div>
+
+    <!-- 今日 MIT ── 最重要的一件事 -->
+    <div class="mit-section" id="mit-section">
+      <div class="mit-header">
+        <div>
+          <div class="mit-title">今日首要任務 MIT（最重要的一件事）</div>
+          <div class="mit-sub">完成它，這週的目標就往前了</div>
+        </div>
+        <button class="btn btn-sm mit-add-btn" onclick="openMitModal()">+ 新增</button>
+      </div>
+      <div id="mit-list"></div>
+    </div>
+
+    <!-- 今日名言 -->
+    <div class="quote-card" id="quote-card" style="display:none">
+      <div id="quote-text" class="quote-text"></div>
+      <div id="quote-author" class="quote-author"></div>
+    </div>
+
+    <!-- 統計卡 -->
+    <h3 id="today-date" style="margin-bottom:1rem"></h3>
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <!-- 成就牆 -->
+    <div id="achievements-section" style="display:none">
+      <div class="section-header">
+        <h2>🏆 已解鎖成就</h2>
+        <span id="achievement-count" class="badge badge-primary"></span>
+      </div>
+      <div id="achievements-grid" class="achievements-grid"></div>
+    </div>
+
+    <!-- 額外成就區塊 -->
+    <div id="extra-section" style="margin-top:1.5rem">
+      <div class="section-header">
+        <h2>⚡ 今日額外成就</h2>
+        <button class="btn btn-primary btn-sm" onclick="openModal('extra-modal')">＋ 記錄</button>
+      </div>
+      <div id="extra-list"></div>
+    </div>
+
+    <!-- 即將到來 -->
+    <div id="upcoming-section" style="margin-top:1.5rem;display:none">
+      <div class="section-header">
+        <h2>近期行程 &amp; 截止日</h2>
+      </div>
+      <div id="upcoming-list"></div>
+    </div>
+
+    <!-- 打卡歷史 -->
+    <div id="history-section" style="display:none;margin-top:2rem">
+      <h2 style="margin-bottom:1rem">近期打卡紀錄</h2>
+      <div id="history-list"></div>
+    </div>
+
+  </div>
+
+  <!-- ── 目標頁 ── -->
+  <div id="goals" class="page">
+    <!-- 瀑布導航列 -->
+    <div class="cascade-bar" id="cascade-bar"></div>
+    <div class="top-bar" style="margin-top:.9rem">
+      <h2 id="goals-page-title">目標瀑布</h2>
+      <button class="btn btn-primary" onclick="openGoalModal()">＋ 新增目標</button>
+    </div>
+    <div id="goals-list"></div>
+  </div>
+
+  <!-- ── 習慣頁 ── -->
+  <div id="habits" class="page">
+    <div class="top-bar">
+      <h2>習慣追蹤</h2>
+      <button class="btn btn-primary" onclick="openModal('habit-modal')">＋ 新增習慣</button>
+    </div>
+    <div id="habits-list"></div>
+  </div>
+
+  <!-- ── 日記頁 ── -->
+  <div id="journal" class="page">
+    <div class="top-bar">
+      <h2>成長日記</h2>
+      <button class="btn btn-primary" onclick="openModal('journal-modal')">＋ 寫日記</button>
+    </div>
+    <div id="journal-list"></div>
+  </div>
+
+  <!-- ── 成就頁 ── -->
+  <div id="achievements" class="page">
+    <div id="ach-header" class="ach-hero">
+      <div class="ach-hero-left">
+        <h2>成就列表</h2>
+        <div id="ach-summary" class="ach-summary"></div>
+      </div>
+      <div id="ach-ring" class="ach-ring">
+        <svg viewBox="0 0 44 44" class="ach-ring-svg">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="var(--border)" stroke-width="4"/>
+          <circle id="ach-ring-fill" cx="22" cy="22" r="18" fill="none" stroke="var(--accent)"
+            stroke-width="4" stroke-linecap="round"
+            stroke-dasharray="113.1" stroke-dashoffset="113.1"
+            transform="rotate(-90 22 22)" style="transition:stroke-dashoffset 1s ease"/>
+        </svg>
+        <div class="ach-ring-label">
+          <span id="ach-ring-num">0</span>
+          <span id="ach-ring-total"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 篩選列 -->
+    <div class="ach-filter-bar">
+      <button class="ach-filter-btn active" data-filter="all">全部</button>
+      <button class="ach-filter-btn" data-filter="unlocked">已解鎖</button>
+      <button class="ach-filter-btn" data-filter="locked">未解鎖</button>
+    </div>
+
+    <div id="ach-grid" class="ach-grid"></div>
+  </div>
+
+  <!-- ── 專案監控頁 ── -->
+  <div id="projects" class="page">
+    <div class="top-bar">
+      <h2>專案監控</h2>
+      <button class="btn btn-primary" onclick="openModal('project-modal')">＋ 新增專案</button>
+    </div>
+    <div id="projects-list" class="projects-list"></div>
+
+    <!-- 監控看板（點擊專案後展開） -->
+    <div id="project-monitor" class="project-monitor" style="display:none">
+      <div class="monitor-header">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <button class="btn btn-sm" onclick="closeMonitor()">← 返回列表</button>
+          <button class="btn btn-sm" onclick="openEditProjectModal()">編輯專案</button>
+        </div>
+        <div class="monitor-title-row">
+          <h2 id="monitor-name"></h2>
+          <span id="monitor-status-badge" class="status-badge"></span>
+        </div>
+        <div id="monitor-desc" class="monitor-desc"></div>
+        <div class="monitor-meta-row">
+          <span id="monitor-dates"></span>
+          <span id="monitor-days-left" class="days-left-chip"></span>
+        </div>
+      </div>
+
+      <!-- 進度列 -->
+      <div class="monitor-progress-block">
+        <div class="progress-label-row">
+          <span>整體進度</span>
+          <span id="monitor-pct" class="pct-num">0%</span>
+        </div>
+        <div class="progress-track-lg">
+          <div id="monitor-pct-fill" class="progress-fill-lg"></div>
+        </div>
+        <div class="progress-adjust-row">
+          <label style="font-size:.8rem;color:var(--text-muted)">手動調整</label>
+          <input type="range" id="progress-slider" min="0" max="100" value="0" step="5"
+            oninput="onProgressSlide(this.value)">
+          <button class="btn btn-sm" onclick="saveProgress()">儲存進度</button>
+        </div>
+      </div>
+
+      <div class="monitor-two-col">
+        <!-- 里程碑 -->
+        <div class="monitor-col">
+          <div class="col-header">
+            <h3>里程碑</h3>
+            <button class="btn btn-sm" onclick="openMilestoneModal()">＋</button>
+          </div>
+          <div id="milestones-list" class="milestones-list"></div>
+        </div>
+
+        <!-- 日誌 -->
+        <div class="monitor-col">
+          <div class="col-header">
+            <h3>進度日誌</h3>
+          </div>
+          <div class="log-input-row">
+            <textarea id="log-note-input" placeholder="今天做了什麼..." rows="2"></textarea>
+            <button class="btn btn-primary btn-sm" onclick="submitLog()">記錄</button>
+          </div>
+          <div id="logs-list" class="logs-list"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:1.5rem;text-align:right">
+        <button class="btn btn-danger btn-sm" onclick="deleteCurrentProject()">刪除專案</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Debug Log 頁 ── -->
+  <div id="debuglog" class="page">
+    <div class="top-bar">
+      <h2>Debug Log</h2>
+      <button class="btn btn-primary" onclick="openDebugEditor()">＋ 新增 Log</button>
+    </div>
+
+    <!-- 搜尋 + 篩選列 -->
+    <div class="dl-toolbar">
+      <div class="dl-search-wrap">
+        <input type="text" id="dl-search" placeholder="搜尋標題、內容、標籤..." oninput="debounceSearch()">
+      </div>
+      <div class="dl-filters">
+        <button class="dl-filter-btn active" data-sev="all">全部</button>
+        <button class="dl-filter-btn" data-sev="error">Error</button>
+        <button class="dl-filter-btn" data-sev="warn">Warn</button>
+        <button class="dl-filter-btn" data-sev="info">Info</button>
+      </div>
+    </div>
+
+    <!-- 列表 / 詳情 兩種狀態 -->
+    <div id="dl-list-view">
+      <div id="dl-list"></div>
+    </div>
+
+    <div id="dl-detail-view" style="display:none">
+      <div class="dl-detail-bar">
+        <button class="btn btn-sm" onclick="closeDlDetail()">← 返回列表</button>
+        <div style="display:flex;gap:.5rem;margin-left:auto">
+          <button class="btn btn-sm" onclick="editCurrentLog()">編輯</button>
+          <button class="btn btn-sm" onclick="copyCurrentLog()">複製 Markdown</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCurrentLog()">刪除</button>
+        </div>
+      </div>
+      <div class="dl-detail-header">
+        <div class="dl-detail-title-row">
+          <span id="dl-detail-sev-badge" class="sev-badge"></span>
+          <h2 id="dl-detail-title"></h2>
+        </div>
+        <div class="dl-detail-meta">
+          <span id="dl-detail-date"></span>
+          <span id="dl-detail-tags" class="dl-tag-list"></span>
+        </div>
+      </div>
+      <div id="dl-detail-body" class="md-preview"></div>
+    </div>
+  </div>
+
+  <!-- ── 行事曆頁 ── -->
+  <div id="calendar" class="page">
+    <div class="top-bar">
+      <h2>行事曆</h2>
+      <button class="btn btn-primary" onclick="openCalendarEventModal()">＋ 新增行程</button>
+    </div>
+
+    <!-- 月份導航 -->
+    <div class="cal-nav">
+      <button class="btn btn-sm" onclick="calPrevMonth()">&#8592;</button>
+      <span id="cal-month-label" class="cal-month-label"></span>
+      <button class="btn btn-sm" onclick="calNextMonth()">&#8594;</button>
+      <button class="btn btn-sm" onclick="calGoToday()" style="margin-left:.5rem">今天</button>
+    </div>
+
+    <!-- 月曆格線 -->
+    <div class="cal-grid-wrap">
+      <div class="cal-weekdays">
+        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+      </div>
+      <div id="cal-grid" class="cal-grid"></div>
+    </div>
+
+    <!-- 選取日的事件列表 -->
+    <div id="cal-day-panel" class="cal-day-panel" style="display:none">
+      <div class="cal-day-panel-header">
+        <span id="cal-day-panel-title" class="cal-day-panel-title"></span>
+        <button class="btn btn-primary btn-sm" onclick="openCalendarEventModal(_calSelectedDate)">＋ 新增</button>
+      </div>
+      <div id="cal-day-events"></div>
+    </div>
+  </div>
+
+  <!-- ── 週報頁 ── -->
+  <div id="weekly" class="page">
+    <div class="top-bar">
+      <h2>AI 成長週報</h2>
+      <button class="btn btn-primary" id="gen-report-btn" onclick="generateReport()">✨ 立即生成本週評價</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.88rem;margin-bottom:1.5rem">
+      每週日 20:00 自動生成 · 也可手動觸發 · 需設定 <code style="background:var(--surface2);padding:2px 6px;border-radius:4px">GEMINI_API_KEY</code>
+    </p>
+    <div id="weekly-report-content"></div>
+  </div>
+
+</main>
+
+<!-- 額外成就 Modal -->
+<div class="modal-overlay" id="extra-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚡ 記錄額外成就</h2>
+      <button class="modal-close" onclick="closeModal('extra-modal')">✕</button>
+    </div>
+    <form id="extra-form">
+      <div class="form-group">
+        <label>你完成了什麼？ *</label>
+        <input type="text" name="title" placeholder="例：完成了一份提案、跑了 5 公里..." required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>類別</label>
+          <select name="category">
+            <option value="mind">🧠 心智</option>
+            <option value="body">💪 身體</option>
+            <option value="skills">🎯 技能</option>
+            <option value="social">❤️ 社交</option>
+            <option value="creativity">🎨 創意</option>
+            <option value="reflection">🔮 內省</option>
+            <option value="general">✅ 一般</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>難度 / 獎勵 XP</label>
+          <select name="difficulty">
+            <option value="1">簡單 · +20 XP</option>
+            <option value="2" selected>中等 · +40 XP</option>
+            <option value="3">困難 · +70 XP</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>備註（可選）</label>
+        <input type="text" name="note" placeholder="補充細節...">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">記錄並領取 XP ✨</button>
+    </form>
+  </div>
+</div>
+
+<!-- 打卡 Modal -->
+<div class="modal-overlay" id="checkin-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>✓ 完成今日挑戰！</h2>
+      <button class="modal-close" onclick="closeModal('checkin-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label>完成後，心情如何？</label>
+      <div class="mood-selector" id="mood-selector">
+        <button type="button" class="mood-btn" data-mood="1">很差</button>
+        <button type="button" class="mood-btn" data-mood="2">不好</button>
+        <button type="button" class="mood-btn active" data-mood="3">普通</button>
+        <button type="button" class="mood-btn" data-mood="4">好</button>
+        <button type="button" class="mood-btn" data-mood="5">很好</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>一句話記錄今天的心得（可選）</label>
+      <textarea id="checkin-reflection" placeholder="今天最大的收穫是..."></textarea>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitCheckin()">
+      提交並領取 XP ✨
+    </button>
+  </div>
+</div>
+
+<!-- 目標 Modal（含瀑布層級） -->
+<div class="modal-overlay" id="goal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="goal-modal-title">新增目標</h2>
+      <button class="modal-close" onclick="closeModal('goal-modal')">✕</button>
+    </div>
+    <form id="goal-form">
+      <!-- 層級選擇（最重要，放最上面） -->
+      <div class="form-group">
+        <label>時間層級 *</label>
+        <div class="horizon-picker" id="horizon-picker">
+          <button type="button" class="horizon-btn" data-h="life" style="color:#b5860d;border-color:#b5860d20">人生北極星</button>
+          <button type="button" class="horizon-btn" data-h="10yr">十年願景</button>
+          <button type="button" class="horizon-btn" data-h="5yr">五年方向</button>
+          <button type="button" class="horizon-btn active" data-h="1yr">年度目標</button>
+          <button type="button" class="horizon-btn" data-h="1mo">月度計劃</button>
+          <button type="button" class="horizon-btn" data-h="1wk">本週重點</button>
+        </div>
+        <input type="hidden" name="horizon" id="goal-horizon-val" value="1yr">
+      </div>
+      <!-- 連結上層 -->
+      <div class="form-group" id="parent-group">
+        <label>連結上層目標（可選）</label>
+        <select name="parent_id" id="goal-parent-select">
+          <option value="">— 無，此為頂層 —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>目標標題 *</label>
+        <input type="text" name="title" placeholder="清晰、具體、可驗證" required>
+      </div>
+      <div class="form-group">
+        <label>說明</label>
+        <textarea name="description" placeholder="更多細節、動機或定義完成的標準..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>分類</label>
+          <select name="category">
+            <option value="general">一般</option>
+            <option value="career">職涯</option>
+            <option value="learning">學習</option>
+            <option value="health">健康</option>
+            <option value="finance">財務</option>
+            <option value="relationship">人際</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>優先級</label>
+          <select name="priority">
+            <option value="1">高</option>
+            <option value="2" selected>中</option>
+            <option value="3">低</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group" id="target-date-group">
+        <label>截止日期</label>
+        <input type="date" name="target_date">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">建立目標</button>
+    </form>
+  </div>
+</div>
+
+<!-- MIT 快速新增 Modal -->
+<div class="modal-overlay" id="mit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>設定今日首要任務 MIT</h2>
+      <button class="modal-close" onclick="closeModal('mit-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:1.25rem;line-height:1.6">
+      MIT（Most Important Task）= 最重要的一件事。今天只問一個問題：<br>
+      完成哪一件事，今天就算成功了？
+    </p>
+    <div class="form-group">
+      <label>今天最重要的一件事 *</label>
+      <input type="text" id="mit-title-input" placeholder="具體、可以在今天完成的事..." required>
+    </div>
+    <div class="form-group">
+      <label>連結本週目標（可選）</label>
+      <select id="mit-parent-select">
+        <option value="">— 不連結 —</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitMit()">確認，今天就做這件事</button>
+  </div>
+</div>
+
+<!-- 習慣 Modal -->
+<div class="modal-overlay" id="habit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增習慣</h2>
+      <button class="modal-close" onclick="closeModal('habit-modal')">✕</button>
+    </div>
+    <form id="habit-form">
+      <div class="form-group">
+        <label>習慣名稱 *</label>
+        <input type="text" name="title" placeholder="例：每天閱讀 30 分鐘" required>
+      </div>
+      <div class="form-group">
+        <label>描述</label>
+        <textarea name="description" placeholder="詳細說明..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>頻率</label>
+          <select name="frequency">
+            <option value="daily">每天</option>
+            <option value="weekly">每週</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>分類</label>
+          <select name="category">
+            <option value="general">一般</option>
+            <option value="health">健康</option>
+            <option value="learning">學習</option>
+            <option value="mindfulness">身心</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">建立習慣</button>
+    </form>
+  </div>
+</div>
+
+<!-- 日記 Modal -->
+<div class="modal-overlay" id="journal-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>寫日記</h2>
+      <button class="modal-close" onclick="closeModal('journal-modal')">✕</button>
+    </div>
+    <form id="journal-form">
+      <div class="form-group">
+        <label>標題 *</label>
+        <input type="text" name="title" placeholder="今天的主題..." required>
+      </div>
+      <div class="form-group">
+        <label>內容 *</label>
+        <textarea name="content" placeholder="記錄今天的想法、學習、感受..." style="min-height:160px" required></textarea>
+      </div>
+      <div class="form-group">
+        <label>心情 (1=很差 / 5=很好)</label>
+        <select name="mood">
+          <option value="5">😄 5 - 很好</option>
+          <option value="4">🙂 4 - 好</option>
+          <option value="3" selected>😐 3 - 普通</option>
+          <option value="2">😕 2 - 不好</option>
+          <option value="1">😢 1 - 很差</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">儲存日記</button>
+    </form>
+  </div>
+</div>
+
+<!-- Debug Log 編輯器 Modal（全螢幕） -->
+<div class="modal-overlay dl-editor-overlay" id="dl-editor-modal">
+  <div class="dl-editor-modal">
+    <div class="dl-editor-topbar">
+      <div class="dl-editor-meta-row">
+        <input type="text" id="dl-title-input" placeholder="標題（例：Redis 連線逾時排查）" class="dl-title-input">
+        <select id="dl-sev-select" class="dl-sev-select">
+          <option value="info">Info</option>
+          <option value="warn">Warn</option>
+          <option value="error">Error</option>
+        </select>
+        <input type="text" id="dl-tags-input" placeholder="標籤（逗號分隔，如 redis,node）" class="dl-tags-input">
+        <select id="dl-project-select" class="dl-project-select">
+          <option value="">— 不連結專案 —</option>
+        </select>
+      </div>
+      <div class="dl-editor-actions">
+        <button class="btn btn-sm" onclick="togglePreview()">切換預覽</button>
+        <button class="btn btn-primary btn-sm" onclick="saveDebugLog()">儲存</button>
+        <button class="btn btn-sm" onclick="closeDebugEditor()">✕</button>
+      </div>
+    </div>
+    <div class="dl-editor-body">
+      <div class="dl-editor-pane" id="dl-editor-pane">
+        <textarea id="dl-content-editor" placeholder="# 問題描述&#10;&#10;## 環境&#10;&#10;## 排查過程&#10;&#10;```js&#10;// 程式碼&#10;```&#10;&#10;## 解法&#10;&#10;## 結論" oninput="syncPreview()"></textarea>
+      </div>
+      <div class="dl-preview-pane" id="dl-preview-pane">
+        <div id="dl-live-preview" class="md-preview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增專案 Modal -->
+<div class="modal-overlay" id="project-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增專案</h2>
+      <button class="modal-close" onclick="closeModal('project-modal')">✕</button>
+    </div>
+    <form id="project-form">
+      <div class="form-group">
+        <label>專案名稱 *</label>
+        <input type="text" name="name" placeholder="例：完成個人網站、讀完 Clean Code..." required>
+      </div>
+      <div class="form-group">
+        <label>目標描述</label>
+        <textarea name="description" placeholder="這個專案想達成什麼？完成的定義是？"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>開始日期</label>
+          <input type="date" name="start_date">
+        </div>
+        <div class="form-group">
+          <label>目標完成日期</label>
+          <input type="date" name="target_date">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">建立專案</button>
+    </form>
+  </div>
+</div>
+
+<!-- 編輯專案 Modal -->
+<div class="modal-overlay" id="edit-project-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>編輯專案</h2>
+      <button class="modal-close" onclick="closeModal('edit-project-modal')">✕</button>
+    </div>
+    <form id="edit-project-form">
+      <div class="form-group">
+        <label>專案名稱 *</label>
+        <input type="text" name="name" required>
+      </div>
+      <div class="form-group">
+        <label>目標描述</label>
+        <textarea name="description"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>開始日期</label>
+          <input type="date" name="start_date">
+        </div>
+        <div class="form-group">
+          <label>目標完成日期</label>
+          <input type="date" name="target_date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>狀態</label>
+        <select name="status">
+          <option value="active">進行中</option>
+          <option value="paused">暫停</option>
+          <option value="done">已完成</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">儲存變更</button>
+    </form>
+  </div>
+</div>
+
+<!-- 新增里程碑 Modal -->
+<div class="modal-overlay" id="milestone-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增里程碑</h2>
+      <button class="modal-close" onclick="closeModal('milestone-modal')">✕</button>
+    </div>
+    <form id="milestone-form">
+      <div class="form-group">
+        <label>里程碑名稱 *</label>
+        <input type="text" name="title" placeholder="例：完成需求分析、上線 MVP..." required>
+      </div>
+      <div class="form-group">
+        <label>預計完成日</label>
+        <input type="date" name="due_date">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">新增</button>
+    </form>
+  </div>
+</div>
+
+<!-- 行事曆 新增/編輯 Modal -->
+<div class="modal-overlay" id="cal-event-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="cal-event-modal-title">新增行程</h2>
+      <button class="modal-close" onclick="closeModal('cal-event-modal')">✕</button>
+    </div>
+    <form id="cal-event-form">
+      <div class="form-group">
+        <label>標題 *</label>
+        <input type="text" id="cal-title" placeholder="行程名稱..." required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>日期 *</label>
+          <input type="date" id="cal-date" required>
+        </div>
+        <div class="form-group">
+          <label>結束日期</label>
+          <input type="date" id="cal-end-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="cal-all-day" checked onchange="toggleCalTime(this.checked)">
+          全天事件
+        </label>
+      </div>
+      <div id="cal-time-row" class="form-row" style="display:none">
+        <div class="form-group">
+          <label>開始時間</label>
+          <input type="time" id="cal-time">
+        </div>
+        <div class="form-group">
+          <label>結束時間</label>
+          <input type="time" id="cal-end-time">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>說明</label>
+        <textarea id="cal-desc" placeholder="備註..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>顏色標籤</label>
+        <div class="cal-color-picker" id="cal-color-picker">
+          <button type="button" class="cal-color-btn active" data-color="#2270c9" style="background:#2270c9" onclick="selectCalColor('#2270c9',this)"></button>
+          <button type="button" class="cal-color-btn" data-color="#2e9468" style="background:#2e9468" onclick="selectCalColor('#2e9468',this)"></button>
+          <button type="button" class="cal-color-btn" data-color="#c25454" style="background:#c25454" onclick="selectCalColor('#c25454',this)"></button>
+          <button type="button" class="cal-color-btn" data-color="#c97430" style="background:#c97430" onclick="selectCalColor('#c97430',this)"></button>
+          <button type="button" class="cal-color-btn" data-color="#7a5ab0" style="background:#7a5ab0" onclick="selectCalColor('#7a5ab0',this)"></button>
+          <button type="button" class="cal-color-btn" data-color="#9b8f80" style="background:#9b8f80" onclick="selectCalColor('#9b8f80',this)"></button>
+        </div>
+        <input type="hidden" id="cal-color" value="#2270c9">
+      </div>
+      <div style="display:flex;gap:.75rem;margin-top:.5rem">
+        <button type="submit" class="btn btn-primary" style="flex:1">儲存行程</button>
+        <button type="button" id="cal-delete-btn" class="btn btn-danger" style="display:none" onclick="deleteCalEvent()">刪除</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- XP 爆炸彈出層 -->
+<div id="xp-burst" class="xp-burst" style="display:none">
+  <div id="xp-burst-inner" class="xp-burst-inner"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- AI 助理浮動視窗 -->
+<button class="ai-fab" id="ai-fab" onclick="toggleAiChat()" title="AI 成長助理">
+  <span class="ai-fab-icon">✦</span>
+</button>
+
+<div class="ai-chat-panel" id="ai-chat-panel">
+  <div class="ai-chat-header">
+    <div class="ai-chat-title">
+      <span class="ai-chat-dot"></span>
+      AI 成長助理
+    </div>
+    <div style="display:flex;gap:.4rem;align-items:center">
+      <button class="btn btn-sm" onclick="clearAiHistory()" style="font-size:.7rem;padding:2px 8px">清除</button>
+      <button class="ai-chat-close" onclick="toggleAiChat()">✕</button>
+    </div>
+  </div>
+  <div class="ai-chat-messages" id="ai-messages">
+    <div class="ai-msg ai">
+      <div class="ai-bubble">你好！我是你的 AI 成長助理。你可以直接用自然語言告訴我你想做什麼，例如：<br><br>
+        「幫我新增一篇日記，今天完成了 ngrok 部署」<br>
+        「幫我記錄習慣：跑步 30 分鐘」<br>
+        「建立一個專案：六月讀完 Clean Code」<br>
+        「查看我目前的成長狀態」
+      </div>
+    </div>
+  </div>
+  <div class="ai-chat-input-row">
+    <textarea id="ai-input" class="ai-input" placeholder="告訴我你想做什麼..." rows="2"
+      onkeydown="handleAiKey(event)"></textarea>
+    <button class="ai-send-btn" id="ai-send-btn" onclick="sendAiMessage()">送出</button>
+  </div>
+</div>
+
+<!-- 手機底部 Tab Bar -->
+<div id="mobile-tab-bar">
+  <button class="tab-btn active" data-page="dashboard">
+    <span class="tab-icon">🌱</span>
+    <span class="tab-label">今日</span>
+  </button>
+  <button class="tab-btn" data-page="goals">
+    <span class="tab-icon">🎯</span>
+    <span class="tab-label">目標</span>
+  </button>
+  <button class="tab-btn" data-page="habits">
+    <span class="tab-icon">🔥</span>
+    <span class="tab-label">習慣</span>
+  </button>
+  <button class="tab-btn" data-page="journal">
+    <span class="tab-icon">📔</span>
+    <span class="tab-label">日記</span>
+  </button>
+  <button class="tab-btn" data-page="achievements">
+    <span class="tab-icon">🏆</span>
+    <span class="tab-label">成就</span>
+  </button>
+  <button class="tab-btn" data-page="weekly">
+    <span class="tab-icon">🤖</span>
+    <span class="tab-label">週報</span>
+  </button>
+  <button class="tab-btn" data-page="projects">
+    <span class="tab-icon">📊</span>
+    <span class="tab-label">專案</span>
+  </button>
+  <button class="tab-btn" data-page="debuglog">
+    <span class="tab-icon">🐛</span>
+    <span class="tab-label">Debug</span>
+  </button>
+  <button class="tab-btn" data-page="calendar">
+    <span class="tab-icon">📅</span>
+    <span class="tab-label">行事曆</span>
+  </button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js" defer></script>
+<script src="/js/app.js" defer></script>
+</body>
+</html>
