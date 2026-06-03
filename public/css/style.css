@@ -1981,6 +1981,8 @@ textarea { min-height: 100px; resize: vertical; }
   border-bottom: 1px solid var(--surface2);
 }
 .log-item:last-child { border-bottom: none; }
+.log-item-debug { cursor: pointer; border-radius: 6px; padding: .55rem .4rem; }
+.log-item-debug:hover { background: var(--surface2); }
 .log-item-note { font-size: .84rem; color: var(--text); }
 .log-item-meta {
   display: flex;
@@ -2805,6 +2807,100 @@ textarea { min-height: 100px; resize: vertical; }
   transition: border-color .12s;
 }
 .cal-color-btn.active { border-color: var(--text); }
+
+/* 行事曆雙欄 */
+.cal-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 1.25rem;
+  align-items: start;
+}
+.cal-right {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  position: sticky;
+  top: 72px;
+  max-height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+}
+.cal-timeline-header {
+  padding: .65rem 1rem;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-2);
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+.cal-timeline {
+  overflow-y: auto;
+  flex: 1;
+}
+.cal-tl-day {
+  padding: .5rem 1rem .25rem;
+}
+.cal-tl-day-label {
+  font-size: .7rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: .3rem;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.cal-tl-day-label.is-today { color: var(--accent); }
+.cal-tl-today-badge {
+  font-size: .6rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-weight: 700;
+}
+.cal-tl-event {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .45rem .5rem;
+  border-radius: 6px;
+  margin-bottom: .2rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.cal-tl-event:hover { background: var(--surface2); border-color: var(--border); }
+.cal-tl-event.selected { background: var(--accent-dim); border-color: var(--accent); }
+.cal-tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; cursor: pointer; }
+.cal-tl-body { flex: 1; min-width: 0; cursor: pointer; }
+.cal-tl-title { font-size: .82rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-tl-time { font-size: .7rem; color: var(--text-muted); margin-top: .1rem; }
+.cal-tl-desc { font-size: .7rem; color: var(--text-muted); margin-top: .1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-tl-edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: .85rem;
+  cursor: pointer;
+  border-radius: 5px;
+  padding: 2px 6px;
+  opacity: 0;
+  transition: opacity .12s, border-color .12s;
+}
+.cal-tl-event:hover .cal-tl-edit-btn { opacity: 1; border-color: var(--border); }
+.cal-tl-edit-btn:hover { color: var(--accent); border-color: var(--accent); }
+.cal-tl-divider { height: 1px; background: var(--border); margin: .25rem 0; }
+.cal-tl-empty { padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: .82rem; }
+
+@media (max-width: 768px) {
+  .cal-layout { grid-template-columns: 1fr; }
+  .cal-right { position: static; max-height: 300px; }
+}
 
 /* 即將到來區塊 */
 .upcoming-item {

@@ -361,29 +361,32 @@
       <button class="btn btn-primary" onclick="openCalendarEventModal()">＋ 新增行程</button>
     </div>
 
-    <!-- 月份導航 -->
-    <div class="cal-nav">
-      <button class="btn btn-sm" onclick="calPrevMonth()">&#8592;</button>
-      <span id="cal-month-label" class="cal-month-label"></span>
-      <button class="btn btn-sm" onclick="calNextMonth()">&#8594;</button>
-      <button class="btn btn-sm" onclick="calGoToday()" style="margin-left:.5rem">今天</button>
-    </div>
-
-    <!-- 月曆格線 -->
-    <div class="cal-grid-wrap">
-      <div class="cal-weekdays">
-        <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    <div class="cal-layout">
+      <!-- 左側：月曆 -->
+      <div class="cal-left">
+        <div class="cal-nav">
+          <button class="btn btn-sm" onclick="calPrevMonth()">&#8592;</button>
+          <span id="cal-month-label" class="cal-month-label"></span>
+          <button class="btn btn-sm" onclick="calNextMonth()">&#8594;</button>
+          <button class="btn btn-sm" onclick="calGoToday()" style="margin-left:.5rem">今天</button>
+        </div>
+        <div class="cal-grid-wrap">
+          <div class="cal-weekdays">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div id="cal-grid" class="cal-grid"></div>
+        </div>
       </div>
-      <div id="cal-grid" class="cal-grid"></div>
-    </div>
 
-    <!-- 選取日的事件列表 -->
-    <div id="cal-day-panel" class="cal-day-panel" style="display:none">
-      <div class="cal-day-panel-header">
-        <span id="cal-day-panel-title" class="cal-day-panel-title"></span>
-        <button class="btn btn-primary btn-sm" onclick="openCalendarEventModal(_calSelectedDate)">＋ 新增</button>
+      <!-- 右側：時間線 -->
+      <div class="cal-right">
+        <div class="cal-timeline-header">
+          <span id="cal-timeline-title">本月行程</span>
+        </div>
+        <div id="cal-timeline" class="cal-timeline">
+          <div class="cal-empty" style="padding:2rem">尚無行程</div>
+        </div>
       </div>
-      <div id="cal-day-events"></div>
     </div>
   </div>
 

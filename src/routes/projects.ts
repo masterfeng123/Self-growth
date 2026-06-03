@@ -56,7 +56,10 @@ router.get('/:id', (req: Request, res: Response) => {
     const logs = db.prepare(
       'SELECT * FROM project_logs WHERE project_id = ? ORDER BY logged_at DESC'
     ).all(req.params.id);
-    res.json({ success: true, data: { ...project as object, milestones, logs } });
+    const debugLogs = db.prepare(
+      "SELECT id, title, severity, created_at FROM debug_logs WHERE project_id = ? ORDER BY created_at DESC"
+    ).all(req.params.id);
+    res.json({ success: true, data: { ...project as object, milestones, logs, debugLogs } });
   } catch {
     res.status(500).json({ success: false, message: '無法取得專案' });
   }

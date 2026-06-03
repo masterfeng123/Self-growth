@@ -1012,7 +1012,7 @@ async function openMonitor(id) {
   _pendingProgress = data.progress;
 
   renderMilestones(data.milestones || []);
-  renderLogs(data.logs || []);
+  renderLogs(data.logs || [], data.debugLogs || []);
 }
 
 function setMonitorProgress(pct) {
@@ -1058,20 +1058,51 @@ function renderMilestones(list) {
     </div>`).join('');
 }
 
-function renderLogs(list) {
+function renderLogs(list, debugList) {
   const el = document.getElementById('logs-list');
-  if (list.length === 0) {
+
+  // 合併並依時間排序（新的在上）
+  const SEV_COLOR = { error: '#c25454', warn: '#c97430', info: '#2270c9' };
+  const combined = [
+    ...list.map(l => ({ _type: 'log', time: l.logged_at, data: l })),
+    ...(debugList || []).map(d => ({ _type: 'debug', time: d.created_at, data: d })),
+  ].sort((a, b) => b.time.localeCompare(a.time));
+
+  if (combined.length === 0) {
     el.innerHTML = '<div style="color:var(--text-muted);font-size:.82rem;padding:.5rem 0">尚無記錄</div>';
     return;
   }
-  el.innerHTML = list.map(l => `
-    <div class="log-item">
-      <div class="log-item-note">${l.note}</div>
-      <div class="log-item-meta">
-        <span>${l.logged_at.slice(0,16)}</span>
-        ${l.progress_snapshot !== null ? `<span class="log-snap-chip">${l.progress_snapshot}%</span>` : ''}
-      </div>
-    </div>`).join('');
+
+  el.innerHTML = combined.map(item => {
+    if (item._type === 'log') {
+      const l = item.data;
+      return `<div class="log-item">
+        <div class="log-item-note">${l.note}</div>
+        <div class="log-item-meta">
+          <span>${l.logged_at.slice(0,16)}</span>
+          ${l.progress_snapshot !== null ? `<span class="log-snap-chip">${l.progress_snapshot}%</span>` : ''}
+        </div>
+      </div>`;
+    } else {
+      const d = item.data;
+      const color = SEV_COLOR[d.severity] || '#9b8f80';
+      return `<div class="log-item log-item-debug" onclick="viewDebugLogFromProject('${d.id}')" title="點擊查看完整 Debug Log">
+        <div class="log-item-note" style="display:flex;align-items:center;gap:.5rem">
+          <span class="sev-badge sev-${d.severity}" style="font-size:.65rem;padding:1px 5px">${d.severity}</span>
+          <span style="color:var(--text)">${d.title}</span>
+        </div>
+        <div class="log-item-meta">
+          <span>${d.created_at.slice(0,16)}</span>
+          <span style="color:${color};font-size:.68rem">Debug Log ↗</span>
+        </div>
+      </div>`;
+    }
+  }).join('');
+}
+
+function viewDebugLogFromProject(id) {
+  navigateTo('debuglog');
+  setTimeout(() => openLogDetail(id), 150);
 }
 
 async function openEditProjectModal() {
@@ -1624,16 +1655,101 @@ const _calSelectedColor = { value: '#2270c9' };
 async function loadCalendar() {
   await fetchCalendarMonth(_calYear, _calMonth);
   renderCalendar();
-  document.getElementById('cal-day-panel').style.display = 'none';
+  renderTimeline();
+}
+
+function renderTimeline() {
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-timeline-title').textContent = `${_calYear} 年 ${monthNames[_calMonth-1]}`;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const weekDays = ['週日','週一','週二','週三','週四','週五','週六'];
+
+  // 收集本月所有有事件的日期，排序
+  const allDates = Object.keys(_calEvents)
+    .filter(d => d.startsWith(`${_calYear}-${String(_calMonth).padStart(2,'0')}`))
+    .sort();
+
+  const el = document.getElementById('cal-timeline');
+
+  if (allDates.length === 0) {
+    el.innerHTML = '<div class="cal-tl-empty">本月沒有行程</div>';
+    return;
+  }
+
+  let html = '';
+  allDates.forEach((dateStr, idx) => {
+    const evs = _calEvents[dateStr] || [];
+    const d = new Date(dateStr + 'T00:00:00');
+    const isToday = dateStr === today;
+    const dayLabel = `${parseInt(dateStr.slice(5,7))}/${parseInt(dateStr.slice(8,10))} ${weekDays[d.getDay()]}`;
+
+    if (idx > 0) html += '<div class="cal-tl-divider"></div>';
+    html += `<div class="cal-tl-day" id="cal-tl-day-${dateStr}">
+      <div class="cal-tl-day-label${isToday?' is-today':''}">
+        ${dayLabel}
+        ${isToday ? '<span class="cal-tl-today-badge">今天</span>' : ''}
+      </div>`;
+
+    // 時間線只顯示「從這天開始」的事件，避免多天行程重複出現
+    evs.filter(e => e.date === dateStr).forEach(e => {
+      const isMultiDay = e.end_date && e.end_date !== e.date;
+      const timeStr = isMultiDay
+        ? `${e.date.slice(5).replace('-','/')} – ${e.end_date.slice(5).replace('-','/')}`
+        : e.all_day ? '全天' : `${e.time || ''}${e.end_time ? ' – ' + e.end_time : ''}`;
+      const isSelected = dateStr === _calSelectedDate;
+      html += `<div class="cal-tl-event${isSelected?' selected':''}" data-tl-date="${dateStr}">
+        <span class="cal-tl-dot" style="background:${e.color}" onclick="calSelectDay('${dateStr}')"></span>
+        <div class="cal-tl-body" onclick="calSelectDay('${dateStr}')">
+          <div class="cal-tl-title" title="${e.title}">${e.title}</div>
+          ${timeStr ? `<div class="cal-tl-time">${timeStr}</div>` : ''}
+          ${e.description ? `<div class="cal-tl-desc">${e.description}</div>` : ''}
+        </div>
+        <button class="cal-tl-edit-btn" onclick="editCalEvent('${e.id}')" title="編輯">✎</button>
+      </div>`;
+    });
+
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+
+  // 自動捲到今天或選取日
+  const scrollTarget = _calSelectedDate || today;
+  const targetEl = document.getElementById(`cal-tl-day-${scrollTarget}`);
+  if (targetEl) targetEl.scrollIntoView({ block: 'nearest' });
 }
 
 async function fetchCalendarMonth(year, month) {
-  const { data } = await apiFetch(`/calendar?year=${year}&month=${month}`);
+  // 多天行程需要顯示前後月份的事件，多抓一個月緩衝
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear  = month === 1 ? year - 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
+  const nextYear  = month === 12 ? year + 1 : year;
+
+  const [cur, prev, next] = await Promise.all([
+    apiFetch(`/calendar?year=${year}&month=${month}`),
+    apiFetch(`/calendar?year=${prevYear}&month=${prevMonth}`),
+    apiFetch(`/calendar?year=${nextYear}&month=${nextMonth}`),
+  ]);
+
   _calEvents = {};
-  (data || []).forEach(e => {
-    const k = e.date;
-    if (!_calEvents[k]) _calEvents[k] = [];
-    _calEvents[k].push(e);
+  const allEvents = [...(prev.data || []), ...(cur.data || []), ...(next.data || [])];
+
+  const toLocalKey = d =>
+    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+  allEvents.forEach(e => {
+    const startDate = new Date(e.date + 'T00:00:00');
+    const endDate   = e.end_date ? new Date(e.end_date + 'T00:00:00') : new Date(startDate);
+
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const key = toLocalKey(d);
+      if (!_calEvents[key]) _calEvents[key] = [];
+      if (!_calEvents[key].find(ev => ev.id === e.id)) {
+        _calEvents[key].push(e);
+      }
+    }
   });
 }
 
@@ -1689,33 +1805,12 @@ function calSelectDay(dateStr) {
   _calSelectedDate = dateStr;
   renderCalendar();
 
-  const panel = document.getElementById('cal-day-panel');
-  panel.style.display = 'block';
-
-  const [y, m, d] = dateStr.split('-');
-  document.getElementById('cal-day-panel-title').textContent = `${parseInt(y)} 年 ${parseInt(m)} 月 ${parseInt(d)} 日`;
-
-  const evs = _calEvents[dateStr] || [];
-  const el = document.getElementById('cal-day-events');
-  if (evs.length === 0) {
-    el.innerHTML = '<div class="cal-empty">這天沒有行程。點擊右上角新增。</div>';
-    return;
-  }
-  el.innerHTML = evs.map(e => {
-    const timeStr = e.all_day ? '全天' : `${e.time || ''}${e.end_time ? ' – ' + e.end_time : ''}`;
-    const descStr = e.description ? `<div class="cal-event-meta">${e.description}</div>` : '';
-    return `<div class="cal-event-item">
-      <div class="cal-event-color-bar" style="background:${e.color}"></div>
-      <div class="cal-event-body">
-        <div class="cal-event-title">${e.title}</div>
-        <div class="cal-event-meta">${timeStr}</div>
-        ${descStr}
-      </div>
-      <div class="cal-event-actions">
-        <button class="btn btn-sm" style="background:var(--surface2);color:var(--text-2);border:1px solid var(--border)" onclick="editCalEvent('${e.id}')">編輯</button>
-      </div>
-    </div>`;
-  }).join('');
+  // 時間線高亮並捲動到該日
+  document.querySelectorAll('.cal-tl-event').forEach(el => {
+    el.classList.toggle('selected', el.dataset.tlDate === dateStr);
+  });
+  const targetEl = document.getElementById(`cal-tl-day-${dateStr}`);
+  if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function calPrevMonth() {
@@ -1803,11 +1898,11 @@ document.getElementById('cal-event-form').addEventListener('submit', async e => 
 
   if (_calEditingId) {
     const { success } = await apiFetch(`/calendar/${_calEditingId}`, { method: 'PUT', body: JSON.stringify(body) });
-    if (success) { toast('行程已更新'); closeModal('cal-event-modal'); loadCalendar().then(() => { if (_calSelectedDate) calSelectDay(_calSelectedDate); }); }
+    if (success) { toast('行程已更新'); closeModal('cal-event-modal'); await loadCalendar(); if (_calSelectedDate) calSelectDay(_calSelectedDate); }
     else toast('更新失敗', true);
   } else {
     const { success } = await apiFetch('/calendar', { method: 'POST', body: JSON.stringify(body) });
-    if (success) { toast('行程已新增'); closeModal('cal-event-modal'); loadCalendar().then(() => { if (body.date) calSelectDay(body.date); }); }
+    if (success) { toast('行程已新增'); closeModal('cal-event-modal'); await loadCalendar(); if (body.date) calSelectDay(body.date); }
     else toast('新增失敗', true);
   }
 });
@@ -1820,7 +1915,7 @@ async function deleteCalEvent() {
   _calEditingId = null;
   const prevDate = _calSelectedDate;
   await loadCalendar();
-  if (prevDate) calSelectDay(prevDate);
+  if (prevDate && _calEvents[prevDate]) calSelectDay(prevDate);
 }
 
 // ════════════════════════════════════════
