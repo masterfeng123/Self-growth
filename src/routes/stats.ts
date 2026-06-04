@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/database';
+import { SQL_TODAY } from '../utils/date';
 
 const router = Router();
 
@@ -8,7 +9,7 @@ router.get('/', (_req: Request, res: Response) => {
     const totalGoals = (db.prepare('SELECT COUNT(*) as c FROM goals').get() as any).c;
     const completedGoals = (db.prepare("SELECT COUNT(*) as c FROM goals WHERE status='completed'").get() as any).c;
     const activeHabits = (db.prepare('SELECT COUNT(*) as c FROM habits WHERE is_active=1').get() as any).c;
-    const todayLogs = (db.prepare("SELECT COUNT(*) as c FROM habit_logs WHERE date(completed_at)=date('now')").get() as any).c;
+    const todayLogs = (db.prepare(`SELECT COUNT(*) as c FROM habit_logs WHERE date(completed_at)=${SQL_TODAY}`).get() as any).c;
     const totalJournals = (db.prepare('SELECT COUNT(*) as c FROM journal_entries').get() as any).c;
     const avgMood = (db.prepare('SELECT AVG(mood) as m FROM journal_entries').get() as any).m;
     const topStreakHabit = db.prepare('SELECT title, streak FROM habits WHERE is_active=1 ORDER BY streak DESC LIMIT 1').get();

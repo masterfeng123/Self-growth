@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/database';
+import { SQL_TODAY } from '../utils/date';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const XP_BY_DIFFICULTY: Record<number, number> = { 1: 20, 2: 40, 3: 70 };
 router.get('/today', (_req: Request, res: Response) => {
   try {
     const logs = db.prepare(
-      "SELECT * FROM extra_logs WHERE date(completed_at) = date('now', 'localtime') ORDER BY completed_at DESC"
+      `SELECT * FROM extra_logs WHERE date(completed_at) = ${SQL_TODAY} ORDER BY completed_at DESC`
     ).all();
     res.json({ success: true, data: logs });
   } catch {

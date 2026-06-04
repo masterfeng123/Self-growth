@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/database';
+import { appToday } from '../utils/date';
 
 const router = Router();
 
@@ -33,7 +34,7 @@ router.post('/:id/log', (req: Request, res: Response) => {
     const habit = db.prepare('SELECT * FROM habits WHERE id = ?').get(req.params.id);
     if (!habit) return res.status(404).json({ success: false, message: '習慣不存在' });
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = appToday();
     const alreadyLogged = db.prepare(
       "SELECT * FROM habit_logs WHERE habit_id = ? AND date(completed_at) = ?"
     ).get(req.params.id, today);

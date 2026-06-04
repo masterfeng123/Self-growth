@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import db from '../db/database';
 import { getLevelInfo } from '../modules/gamification';
+import { appToday } from '../utils/date';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.get('/', (_req: Request, res: Response) => {
 // GET /api/goals/mit — 今日 MIT
 router.get('/mit', (_req: Request, res: Response) => {
   try {
-    const today = new Date().toLocaleDateString('sv');
+    const today = appToday();
     const mits = db.prepare(`
       SELECT g.*, p.title AS parent_title, p.horizon AS parent_horizon
       FROM goals g
@@ -68,7 +69,7 @@ router.post('/', (req: Request, res: Response) => {
 
     const id = uuidv4();
     const h = horizon || '1yr';
-    const mitDate = h === 'mit' ? new Date().toLocaleDateString('sv') : null;
+    const mitDate = h === 'mit' ? appToday() : null;
 
     db.prepare(`
       INSERT INTO goals

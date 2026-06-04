@@ -2,6 +2,7 @@ import cron from 'node-cron';
 import db from '../db/database';
 import { sendMorningEmail, sendEveningReminder } from './emailService';
 import { generateWeeklyReport } from './weeklyEval';
+import { SQL_TODAY } from '../utils/date';
 
 export function startScheduler(): void {
   // 每天早上 07:00 發送挑戰郵件
@@ -13,7 +14,7 @@ export function startScheduler(): void {
   // 每天晚上 22:00，若未打卡則發連勝危機提醒
   cron.schedule('0 22 * * *', async () => {
     const todayLog = db.prepare(
-      "SELECT id FROM challenge_logs WHERE date(completed_at) = date('now', 'localtime')"
+      `SELECT id FROM challenge_logs WHERE date(completed_at) = ${SQL_TODAY}`
     ).get();
     if (!todayLog) {
       console.log('[scheduler] 觸發：晚間未打卡提醒');

@@ -313,10 +313,21 @@ ${goalDetails}
 }`;
 }
 
+function getAvailableKey(): string | null {
+  const candidates = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_KEY_1,
+    process.env.GEMINI_KEY_2,
+    process.env.GEMINI_KEY_3,
+    process.env.GEMINI_KEY_4,
+  ].filter(Boolean) as string[];
+  return candidates[0] ?? null;
+}
+
 export async function generateWeeklyReport(): Promise<{ success: boolean; reportId?: string; error?: string }> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = getAvailableKey();
   if (!apiKey) {
-    return { success: false, error: 'GEMINI_API_KEY 未設定，請在 .env 中填入 API Key' };
+    return { success: false, error: '未設定任何 GEMINI API Key，請在 .env 填入 GEMINI_KEY_1' };
   }
 
   try {

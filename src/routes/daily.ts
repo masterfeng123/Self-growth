@@ -4,6 +4,7 @@ import db from '../db/database';
 import { CHALLENGES, Challenge } from '../data/challenges';
 import { getLevelInfo, checkAchievements, ACHIEVEMENTS } from '../modules/gamification';
 import { QUOTES } from '../data/quotes';
+import { appToday, appYesterday, SQL_TODAY } from '../utils/date';
 
 const router = Router();
 
@@ -21,7 +22,7 @@ router.get('/', (_req: Request, res: Response) => {
   try {
     const challenge = getTodayChallenge();
     const todayLog = db.prepare(
-      "SELECT * FROM challenge_logs WHERE date(completed_at) = date('now', 'localtime')"
+      `SELECT * FROM challenge_logs WHERE date(completed_at) = ${SQL_TODAY}`
     ).get();
 
     const profile = getUserProfile() as any;
@@ -54,7 +55,7 @@ router.post('/checkin', (req: Request, res: Response) => {
     const challenge = getTodayChallenge();
 
     const existing = db.prepare(
-      "SELECT * FROM challenge_logs WHERE date(completed_at) = date('now', 'localtime')"
+      `SELECT * FROM challenge_logs WHERE date(completed_at) = ${SQL_TODAY}`
     ).get();
     if (existing) {
       return res.status(409).json({ success: false, message: '今日已打卡！' });
@@ -63,9 +64,7 @@ router.post('/checkin', (req: Request, res: Response) => {
     const profile = getUserProfile() as any;
 
     // 計算連勝天數
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('sv'); // YYYY-MM-DD
+    const yesterdayStr = appYesterday();
     const newStreak = profile.last_checkin === yesterdayStr ? profile.current_streak + 1 : 1;
 
     // 計算 XP
@@ -81,7 +80,7 @@ router.post('/checkin', (req: Request, res: Response) => {
 
     const newXp = profile.total_xp + xpEarned;
     const newLongest = Math.max(newStreak, profile.longest_streak);
-    const today = new Date().toLocaleDateString('sv');
+    const today = appToday();
 
     // 統計各類別完成數（含本次）
     const rows = db.prepare('SELECT challenge_id FROM challenge_logs').all() as any[];
