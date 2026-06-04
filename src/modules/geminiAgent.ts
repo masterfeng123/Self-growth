@@ -1,9 +1,15 @@
 import db from '../db/database';
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.1-flash-lite';
 
 function getKeys(): string[] {
-  return [process.env.GEMINI_API_KEY].filter(Boolean) as string[];
+  return [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_KEY_1,
+    process.env.GEMINI_KEY_2,
+    process.env.GEMINI_KEY_3,
+    process.env.GEMINI_KEY_4,
+  ].filter(Boolean) as string[];
 }
 
 let currentKeyIndex = 0;
