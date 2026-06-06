@@ -1632,13 +1632,10 @@ async function refreshClaudeUsage(silent = false) {
         alertBanner.style.display = 'none';
       }
 
-      // toast 通知（每 10 分鐘最多一次，避免 poll 洗屏）
-      if (alerts.length > 0) {
-        const now95 = Date.now();
-        if (!window._lastClaudeAlert || now95 - window._lastClaudeAlert > 10 * 60 * 1000) {
-          toast(`⚠️ Claude 用量警示：${alerts[0]}！`, true);
-          window._lastClaudeAlert = now95;
-        }
+      // toast 通知（每次 session 只彈一次）
+      if (alerts.length > 0 && !window._claudeAlertShown) {
+        toast(`⚠️ Claude 用量警示：${alerts[0]}！`, true);
+        window._claudeAlertShown = true;
       }
 
       // stale / fetchedAt
