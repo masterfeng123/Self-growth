@@ -61,29 +61,42 @@
       <div class="usage-section">
         <div class="usage-service-row">
           <span class="usage-service-name">Claude AI</span>
-          <button class="usage-refresh-btn" onclick="refreshClaudeUsage()" id="claude-refresh-btn" title="從 claude.ai 抓取">↻ 更新</button>
-        </div>
-        <div class="usage-stat-row" id="claude-live-row" style="display:none">
-          <span class="usage-label">本週用量</span>
-          <div style="display:flex;align-items:center;gap:.5rem">
-            <div class="usage-bar-wrap">
-              <div class="usage-bar-fill" id="claude-bar-fill"></div>
-            </div>
-            <span class="usage-val" id="claude-pct">—</span>
+          <div style="display:flex;align-items:center;gap:.4rem">
+            <span id="claude-plan-badge" class="claude-plan-badge" style="display:none"></span>
+            <button class="usage-refresh-btn" onclick="refreshClaudeUsage()" id="claude-refresh-btn" title="重新抓取">↻</button>
           </div>
         </div>
-        <div class="usage-stat-row" id="claude-plan-row" style="display:none">
-          <span class="usage-label">方案</span>
-          <span class="usage-val" id="claude-plan">—</span>
+
+        <!-- 5 小時視窗 -->
+        <div id="claude-5h-row" style="display:none">
+          <div class="claude-window-label">5 小時用量</div>
+          <div class="claude-bar-row">
+            <div class="usage-bar-wrap" style="flex:1">
+              <div class="usage-bar-fill" id="claude-5h-fill"></div>
+            </div>
+            <span class="usage-val" id="claude-5h-pct">—</span>
+          </div>
+          <div class="usage-hint" id="claude-5h-reset"></div>
         </div>
-        <div class="usage-stat-row" id="claude-reset-row" style="display:none">
-          <span class="usage-label">重置時間</span>
-          <span class="usage-val" id="claude-reset">—</span>
+
+        <!-- 7 天視窗 -->
+        <div id="claude-7d-row" style="display:none">
+          <div class="claude-window-label">7 天用量</div>
+          <div class="claude-bar-row">
+            <div class="usage-bar-wrap" style="flex:1">
+              <div class="usage-bar-fill" id="claude-7d-fill"></div>
+            </div>
+            <span class="usage-val" id="claude-7d-pct">—</span>
+          </div>
+          <div class="usage-hint" id="claude-7d-reset"></div>
         </div>
-        <div id="claude-session-hint" class="usage-hint" style="display:none">
-          需設定 Session Key，請查看說明
+
+        <div id="claude-alert-banner" style="display:none;background:#451a03;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:12px;color:#fbbf24;margin-top:6px;">
+          ⚠️ <span id="claude-alert-text"></span>
         </div>
-        <div id="claude-status-msg" class="usage-hint"></div>
+        <div id="claude-error-msg" class="usage-hint" style="display:none"></div>
+        <div id="claude-stale-msg" class="usage-hint" style="display:none;color:var(--warning)">數據可能不是最新</div>
+        <div id="claude-fetched-at" class="usage-hint" style="display:none"></div>
       </div>
 
       <div style="text-align:center;margin-top:.6rem">

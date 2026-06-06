@@ -1530,7 +1530,7 @@ async function loadUsage() {
   const { data } = await apiFetch('/usage');
   if (!data) return;
 
-  const { gemini, claude, weekStart } = data;
+  const { gemini, weekStart } = data;
 
   document.getElementById('gemini-week-calls').textContent = gemini.weekCalls + ' 次';
   document.getElementById('gemini-today-calls').textContent = gemini.todayCalls + ' 次';
@@ -1539,7 +1539,6 @@ async function loadUsage() {
   document.getElementById('gemini-tokens').textContent =
     totalTokens > 0 ? (totalTokens >= 1000 ? (totalTokens / 1000).toFixed(1) + 'K' : totalTokens + '') : '0';
 
-  // 狀態燈 & badge
   let statusClass = 'ok', statusText = '正常', dotClass = '';
   if (gemini.weekCalls > 800) { statusClass = 'high'; statusText = '用量高'; dotClass = 'high'; }
   else if (gemini.weekCalls > 400) { statusClass = 'warn'; statusText = '注意'; dotClass = 'warn'; }
@@ -1547,55 +1546,120 @@ async function loadUsage() {
   const badge = document.getElementById('gemini-status-badge');
   badge.textContent = statusText;
   badge.className = `usage-badge ${statusClass}`;
-  const dot = document.getElementById('usage-dot');
-  dot.className = `usage-dot ${dotClass}`;
+  document.getElementById('usage-dot').className = `usage-dot ${dotClass}`;
 
-  // Claude
-  document.getElementById('claude-conv-input').value = claude.weekConversations || '';
-  document.getElementById('claude-note-input').value = claude.note || '';
-
-  // 週範圍
   const ws = new Date(weekStart);
   const we = new Date(ws); we.setDate(we.getDate() + 6);
   document.getElementById('usage-week-range').textContent =
     `${ws.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })} — ` +
     `${we.toLocaleDateString('zh-TW', { month: 'short', day: 'numeric' })}`;
+
+  // Claude 用量自動載入
+  refreshClaudeUsage(true);
 }
 
-async function refreshClaudeUsage() {
+function _barColor(pct) {
+  if (pct >= 80) return 'high';
+  if (pct >= 50) return 'warn';
+  return '';
+}
+
+function _resetText(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  const now = new Date();
+  const diffMs = d - now;
+  if (diffMs < 0) return '已重置';
+  const diffH = Math.floor(diffMs / 3600000);
+  const diffM = Math.floor((diffMs % 3600000) / 60000);
+  if (diffH < 24) return `${diffH}h ${diffM}m 後重置`;
+  const diffD = Math.floor(diffMs / 86400000);
+  return `${diffD} 天後重置（${d.toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })}）`;
+}
+
+let _claudePollTimer = null;
+
+async function refreshClaudeUsage(silent = false) {
   const btn = document.getElementById('claude-refresh-btn');
-  const msg = document.getElementById('claude-status-msg');
-  btn.classList.add('spinning');
-  btn.disabled = true;
-  msg.textContent = '抓取中...';
+  const errEl = document.getElementById('claude-error-msg');
+  const staleEl = document.getElementById('claude-stale-msg');
+  const fetchedEl = document.getElementById('claude-fetched-at');
+
+  if (!silent) { btn.classList.add('spinning'); btn.disabled = true; }
+  errEl.style.display = 'none';
+  staleEl.style.display = 'none';
+
   try {
-    const res = await apiFetch('/usage/claude/live');
+    const res = await apiFetch('/usage/claude/oauth');
+
     if (res.success) {
-      const { usedPercent, plan, resetAt } = res.data;
-      document.getElementById('claude-live-row').style.display = 'flex';
-      document.getElementById('claude-plan-row').style.display = 'flex';
-      document.getElementById('claude-pct').textContent = usedPercent + '%';
-      document.getElementById('claude-plan').textContent = plan || 'Pro';
-      const fill = document.getElementById('claude-bar-fill');
-      fill.style.width = usedPercent + '%';
-      fill.className = 'usage-bar-fill' + (usedPercent > 80 ? ' high' : usedPercent > 50 ? ' warn' : '');
-      if (resetAt) {
-        document.getElementById('claude-reset-row').style.display = 'flex';
-        document.getElementById('claude-reset').textContent = new Date(resetAt).toLocaleDateString('zh-TW');
+      const d = res.data;
+
+      // 方案 badge
+      const planBadge = document.getElementById('claude-plan-badge');
+      planBadge.textContent = (d.plan || 'pro').toUpperCase();
+      planBadge.className = `claude-plan-badge plan-${(d.plan || 'pro').toLowerCase()}`;
+      planBadge.style.display = 'inline-block';
+
+      // 5h 視窗
+      const u5 = d.fiveHour.utilization;
+      document.getElementById('claude-5h-row').style.display = 'block';
+      document.getElementById('claude-5h-pct').textContent = u5 + '%';
+      const f5 = document.getElementById('claude-5h-fill');
+      f5.style.width = u5 + '%';
+      f5.className = 'usage-bar-fill ' + _barColor(u5);
+      document.getElementById('claude-5h-reset').textContent = _resetText(d.fiveHour.resetsAt);
+
+      // 7d 視窗
+      const u7 = d.sevenDay.utilization;
+      document.getElementById('claude-7d-row').style.display = 'block';
+      document.getElementById('claude-7d-pct').textContent = u7 + '%';
+      const f7 = document.getElementById('claude-7d-fill');
+      f7.style.width = u7 + '%';
+      f7.className = 'usage-bar-fill ' + _barColor(u7);
+      document.getElementById('claude-7d-reset').textContent = _resetText(d.sevenDay.resetsAt);
+
+      // 用量警示 banner（用量面板內常駐）
+      const alertBanner = document.getElementById('claude-alert-banner');
+      const alertText  = document.getElementById('claude-alert-text');
+      const alerts = [];
+      if (u5 >= 95) alerts.push(`5 小時視窗已達 ${u5}%`);
+      if (u7 >= 95) alerts.push(`7 天視窗已達 ${u7}%`);
+      if (alerts.length > 0) {
+        alertText.textContent = alerts.join('、') + '，請注意剩餘額度';
+        alertBanner.style.display = 'block';
+      } else {
+        alertBanner.style.display = 'none';
       }
-      msg.textContent = '已更新 ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
-      document.getElementById('claude-session-hint').style.display = 'none';
-    } else if (res.message?.includes('SESSION_EXPIRED') || res.message?.includes('Session')) {
-      msg.textContent = '';
-      document.getElementById('claude-session-hint').style.display = 'block';
+
+      // toast 通知（每 10 分鐘最多一次，避免 poll 洗屏）
+      if (alerts.length > 0) {
+        const now95 = Date.now();
+        if (!window._lastClaudeAlert || now95 - window._lastClaudeAlert > 10 * 60 * 1000) {
+          toast(`⚠️ Claude 用量警示：${alerts[0]}！`, true);
+          window._lastClaudeAlert = now95;
+        }
+      }
+
+      // stale / fetchedAt
+      if (res.stale) staleEl.style.display = 'block';
+      fetchedEl.style.display = 'block';
+      fetchedEl.textContent = '更新：' + new Date(d.fetchedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+
     } else {
-      msg.textContent = '錯誤：' + res.message;
+      errEl.textContent = res.message || '無法取得用量';
+      errEl.style.display = 'block';
     }
   } catch {
-    msg.textContent = '連線失敗';
+    errEl.textContent = '連線失敗';
+    errEl.style.display = 'block';
   }
-  btn.classList.remove('spinning');
-  btn.disabled = false;
+
+  if (!silent) { btn.classList.remove('spinning'); btn.disabled = false; }
+
+  // 5 分鐘後自動重新抓取（面板開著才 poll）
+  clearTimeout(_claudePollTimer);
+  _claudePollTimer = setTimeout(() => { if (_usageOpen) refreshClaudeUsage(true); }, 5 * 60 * 1000);
 }
 
 // ════════════════════════════════════════

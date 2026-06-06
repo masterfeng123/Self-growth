@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import db from '../db/database';
 import { fetchClaudeUsage } from '../modules/claudeUsageScraper';
+import { fetchClaudeOAuthUsage } from '../modules/claudeOAuthUsage';
 
 const router = Router();
 
@@ -60,7 +61,7 @@ router.get('/', (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/usage/claude/live — 即時從 claude.ai 抓取用量
+// GET /api/usage/claude/live — 即時從 claude.ai 抓取用量（舊 session key 方式）
 router.get('/claude/live', async (_req: Request, res: Response) => {
   try {
     const data = await fetchClaudeUsage();
@@ -71,6 +72,26 @@ router.get('/claude/live', async (_req: Request, res: Response) => {
       success: false,
       message: isExpired ? 'Session 已過期，請重新設定 CLAUDE_SESSION_KEY' : err.message,
     });
+  }
+});
+
+// GET /api/usage/claude/oauth — OAuth token 方式抓取用量
+router.get('/claude/oauth', async (_req: Request, res: Response) => {
+  try {
+    const data = await fetchClaudeOAuthUsage();
+    res.json({ success: true, data, stale: data.stale ?? false });
+  } catch (err: any) {
+    const msg = err.message ?? '';
+    if (msg === 'CREDENTIALS_NOT_FOUND') {
+      return res.status(404).json({ success: false, code: 'NO_CREDENTIALS', message: '找不到 Claude 登入憑證，請先執行 claude login' });
+    }
+    if (msg.startsWith('TOKEN_REFRESH_FAILED') || msg === 'TOKEN_EXPIRED') {
+      return res.status(401).json({ success: false, code: 'TOKEN_EXPIRED', message: '請用 Claude Code 或 claude login 更新 Token' });
+    }
+    if (msg === 'RATE_LIMITED') {
+      return res.status(429).json({ success: false, code: 'RATE_LIMITED', message: '請求過於頻繁，請稍後再試' });
+    }
+    res.status(500).json({ success: false, code: 'ERROR', message: msg });
   }
 });
 

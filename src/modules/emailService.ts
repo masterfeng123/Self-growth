@@ -125,6 +125,47 @@ export async function sendMorningEmail(): Promise<void> {
   }
 }
 
+export async function sendClaudeUsageAlert(fiveHourPct: number, sevenDayPct: number): Promise<void> {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+  try {
+    const port = process.env.PORT || 3000;
+    const critical = fiveHourPct >= 95 ? fiveHourPct : sevenDayPct;
+    const label = fiveHourPct >= 95 ? '5 小時視窗' : '7 天視窗';
+
+    const html = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="background:#0f172a;font-family:sans-serif;padding:24px;text-align:center;">
+  <div style="max-width:480px;margin:0 auto;background:#1e293b;border-radius:16px;padding:32px;border:2px solid #f59e0b;">
+    <div style="font-size:40px;margin-bottom:16px;">⚠️</div>
+    <h2 style="color:#fbbf24;margin:0 0 12px;font-size:20px;">Claude 用量警示</h2>
+    <p style="color:#94a3b8;margin:0 0 6px;font-size:15px;">${label} 使用量已達</p>
+    <p style="color:#f87171;font-size:36px;font-weight:800;margin:8px 0 20px;">${critical}%</p>
+    <div style="background:#0f172a;border-radius:8px;padding:14px 20px;margin-bottom:24px;text-align:left;">
+      <div style="color:#64748b;font-size:12px;margin-bottom:6px;">使用詳情</div>
+      <div style="color:#e2e8f0;font-size:14px;">5 小時視窗：<b style="color:${fiveHourPct>=95?'#f87171':'#4ade80'}">${fiveHourPct}%</b></div>
+      <div style="color:#e2e8f0;font-size:14px;margin-top:4px;">7 天視窗：<b style="color:${sevenDayPct>=95?'#f87171':'#4ade80'}">${sevenDayPct}%</b></div>
+    </div>
+    <a href="http://localhost:${port}"
+       style="display:inline-block;background:#f59e0b;color:#0f172a;text-decoration:none;padding:12px 32px;border-radius:8px;font-weight:700;font-size:15px;">
+      前往查看用量
+    </a>
+  </div>
+</body>
+</html>`;
+
+    await createTransporter().sendMail({
+      from: `"🌱 Self-growth" <${process.env.EMAIL_USER}>`,
+      to: process.env.EMAIL_TO || process.env.EMAIL_USER,
+      subject: `⚠️ Claude 用量警示：${label} 已達 ${critical}%`,
+      html,
+    });
+    console.log(`[email] Claude 用量警示已發送（5h:${fiveHourPct}% / 7d:${sevenDayPct}%）`);
+  } catch (err) {
+    console.error('[email] Claude 用量警示發送失敗:', err);
+  }
+}
+
 export async function sendEveningReminder(): Promise<void> {
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
   try {
