@@ -45,6 +45,48 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
+// PATCH /api/projects/milestones/:mid — toggle done, auto-update project progress
+// ⚠️ 必須在 PATCH /:id 之前，否則 Express 把 "milestones" 當 project id 攔截
+router.patch('/milestones/:mid', (req: Request, res: Response) => {
+  try {
+    const milestone = db.prepare('SELECT * FROM project_milestones WHERE id = ?').get(req.params.mid) as any;
+    if (!milestone) return res.status(404).json({ success: false, message: '里程碑不存在' });
+    const newDone = req.body.done !== undefined ? (req.body.done ? 1 : 0) : (milestone.done ? 0 : 1);
+    db.prepare('UPDATE project_milestones SET done = ? WHERE id = ?').run(newDone, req.params.mid);
+
+    const autoProgress = calcProgressFromMilestones(milestone.project_id);
+    if (autoProgress >= 0) {
+      const finalStatus = autoProgress === 100 ? 'done' : 'active';
+      db.prepare(`UPDATE projects SET progress = ?, status = ?, updated_at = datetime('now','localtime') WHERE id = ?`)
+        .run(autoProgress, finalStatus, milestone.project_id);
+
+      if (autoProgress === 100) {
+        const profile = db.prepare('SELECT * FROM user_profile WHERE id = 1').get() as any;
+        const xp = 100;
+        db.prepare('UPDATE user_profile SET total_xp = total_xp + ? WHERE id = 1').run(xp);
+        const newXp = profile.total_xp + xp;
+        const newLevel = getLevelInfo(newXp);
+        return res.json({ success: true, data: { projectCompleted: true, xpEarned: xp, levelInfo: newLevel } });
+      }
+    }
+
+    res.json({ success: true, data: { projectCompleted: false, autoProgress } });
+  } catch {
+    res.status(500).json({ success: false, message: '無法更新里程碑' });
+  }
+});
+
+// DELETE /api/projects/milestones/:mid
+router.delete('/milestones/:mid', (req: Request, res: Response) => {
+  try {
+    const result = db.prepare('DELETE FROM project_milestones WHERE id = ?').run(req.params.mid);
+    if (result.changes === 0) return res.status(404).json({ success: false, message: '里程碑不存在' });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ success: false, message: '無法刪除里程碑' });
+  }
+});
+
 // GET /api/projects/:id
 router.get('/:id', (req: Request, res: Response) => {
   try {
@@ -116,47 +158,6 @@ router.post('/:id/milestones', (req: Request, res: Response) => {
     res.status(201).json({ success: true, data: milestone });
   } catch {
     res.status(500).json({ success: false, message: '無法新增里程碑' });
-  }
-});
-
-// PATCH /api/projects/milestones/:mid — toggle done, auto-update project progress
-router.patch('/milestones/:mid', (req: Request, res: Response) => {
-  try {
-    const milestone = db.prepare('SELECT * FROM project_milestones WHERE id = ?').get(req.params.mid) as any;
-    if (!milestone) return res.status(404).json({ success: false, message: '里程碑不存在' });
-    const newDone = req.body.done !== undefined ? (req.body.done ? 1 : 0) : (milestone.done ? 0 : 1);
-    db.prepare('UPDATE project_milestones SET done = ? WHERE id = ?').run(newDone, req.params.mid);
-
-    const autoProgress = calcProgressFromMilestones(milestone.project_id);
-    if (autoProgress >= 0) {
-      const finalStatus = autoProgress === 100 ? 'done' : 'active';
-      db.prepare(`UPDATE projects SET progress = ?, status = ?, updated_at = datetime('now','localtime') WHERE id = ?`)
-        .run(autoProgress, finalStatus, milestone.project_id);
-
-      if (autoProgress === 100) {
-        const profile = db.prepare('SELECT * FROM user_profile WHERE id = 1').get() as any;
-        const xp = 100;
-        db.prepare('UPDATE user_profile SET total_xp = total_xp + ? WHERE id = 1').run(xp);
-        const newXp = profile.total_xp + xp;
-        const newLevel = getLevelInfo(newXp);
-        return res.json({ success: true, data: { projectCompleted: true, xpEarned: xp, levelInfo: newLevel } });
-      }
-    }
-
-    res.json({ success: true, data: { projectCompleted: false, autoProgress } });
-  } catch {
-    res.status(500).json({ success: false, message: '無法更新里程碑' });
-  }
-});
-
-// DELETE /api/projects/milestones/:mid
-router.delete('/milestones/:mid', (req: Request, res: Response) => {
-  try {
-    const result = db.prepare('DELETE FROM project_milestones WHERE id = ?').run(req.params.mid);
-    if (result.changes === 0) return res.status(404).json({ success: false, message: '里程碑不存在' });
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false, message: '無法刪除里程碑' });
   }
 });
 
