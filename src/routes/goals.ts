@@ -50,6 +50,23 @@ router.get('/mit', (_req: Request, res: Response) => {
   }
 });
 
+// GET /api/goals/tasks — 今日次要任務
+router.get('/tasks', (_req: Request, res: Response) => {
+  try {
+    const today = appToday();
+    const tasks = db.prepare(`
+      SELECT g.*, p.title AS parent_title, p.horizon AS parent_horizon
+      FROM goals g
+      LEFT JOIN goals p ON g.parent_id = p.id
+      WHERE g.horizon = 'task' AND g.mit_date = ?
+      ORDER BY g.status ASC, g.created_at ASC
+    `).all(today);
+    res.json({ success: true, data: tasks });
+  } catch {
+    res.status(500).json({ success: false, message: '無法取得今日次要任務' });
+  }
+});
+
 // GET /api/goals/:id
 router.get('/:id', (req: Request, res: Response) => {
   try {
@@ -69,7 +86,7 @@ router.post('/', (req: Request, res: Response) => {
 
     const id = uuidv4();
     const h = horizon || '1yr';
-    const mitDate = h === 'mit' ? appToday() : null;
+    const mitDate = (h === 'mit' || h === 'task') ? appToday() : null;
 
     db.prepare(`
       INSERT INTO goals

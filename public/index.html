@@ -142,6 +142,18 @@
       <div id="mit-list"></div>
     </div>
 
+    <!-- 今日次要任務 -->
+    <div class="mit-section" id="task-section" style="margin-top:1rem">
+      <div class="mit-header">
+        <div>
+          <div class="mit-title" style="font-size:.95rem">今日次要任務</div>
+          <div class="mit-sub">排好今天想做的事，不一定全做完</div>
+        </div>
+        <button class="btn btn-sm mit-add-btn" onclick="openTaskModal()">+ 新增</button>
+      </div>
+      <div id="task-list"></div>
+    </div>
+
     <!-- 今日名言 -->
     <div class="quote-card" id="quote-card" style="display:none">
       <div id="quote-text" class="quote-text"></div>
@@ -575,6 +587,24 @@
       </select>
     </div>
     <button class="btn btn-primary" style="width:100%" onclick="submitMit()">確認，今天就做這件事</button>
+  </div>
+</div>
+
+<!-- 次要任務 快速新增 Modal -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>新增今日次要任務</h2>
+      <button class="modal-close" onclick="closeModal('task-modal')">✕</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.82rem;margin-bottom:1.25rem;line-height:1.6">
+      把今天想做的事排進來。不一定全部完成，做到算賺到。
+    </p>
+    <div class="form-group">
+      <label>任務名稱 *</label>
+      <input type="text" id="task-title-input" placeholder="今天想做的事..." required>
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="submitTask()">加入次要任務</button>
   </div>
 </div>
 

@@ -46,7 +46,7 @@ document.querySelectorAll('nav a[data-page], .tab-btn[data-page]').forEach(link 
     document.querySelectorAll(`[data-page="${link.dataset.page}"]`).forEach(el => el.classList.add('active'));
     const page = link.dataset.page;
     document.getElementById(page).classList.add('active');
-    if (page === 'dashboard') { loadDailyChallenge(); loadStats(); loadUpcoming(); }
+    if (page === 'dashboard') { loadDailyChallenge(); loadStats(); loadUpcoming(); loadMit(); loadTasks(); }
     if (page === 'goals')        loadGoals();
     if (page === 'habits')       loadHabits();
     if (page === 'journal')      loadJournal();
@@ -187,6 +187,7 @@ async function loadDailyChallenge() {
   }
 
   loadMit();
+  loadTasks();
   loadHistory();
 }
 
@@ -280,6 +281,66 @@ async function completeMit(id) {
 async function deleteMit(id) {
   const { success } = await apiFetch(`/goals/${id}`, { method: 'DELETE' });
   if (success) { toast('已刪除'); loadMit(); }
+}
+
+// ════════════════════════════════════════
+//  今日次要任務
+// ════════════════════════════════════════
+async function loadTasks() {
+  const { data: tasks } = await apiFetch('/goals/tasks');
+  const list = document.getElementById('task-list');
+  if (!tasks || tasks.length === 0) {
+    list.innerHTML = `<div class="mit-empty">今天還沒有次要任務。點擊「+ 新增」加入。</div>`;
+    return;
+  }
+  const done  = tasks.filter(t => t.status === 'completed');
+  const todo  = tasks.filter(t => t.status !== 'completed');
+  list.innerHTML = [...todo, ...done].map(t => {
+    const isDone = t.status === 'completed';
+    return `
+      <div class="mit-item ${isDone ? 'mit-done' : ''}">
+        <button class="mit-check ${isDone ? 'checked' : ''}" onclick="${isDone ? '' : `completeTask('${t.id}')`}"
+          title="${isDone ? '已完成' : '標記完成'}" ${isDone ? 'disabled' : ''}>
+          ${isDone ? '✓' : ''}
+        </button>
+        <div class="mit-item-content">
+          <div class="mit-item-title ${isDone ? 'done-text' : ''}">${t.title}</div>
+        </div>
+        ${isDone ? `<span class="mit-xp" style="color:var(--text-muted)">+20 pt</span>` : ''}
+        ${!isDone ? `<button class="btn btn-danger btn-sm" onclick="deleteTask('${t.id}')">刪除</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function openTaskModal() {
+  document.getElementById('task-title-input').value = '';
+  openModal('task-modal');
+}
+
+async function submitTask() {
+  const title = document.getElementById('task-title-input').value.trim();
+  if (!title) { toast('請輸入任務名稱', true); return; }
+  const { success } = await apiFetch('/goals', {
+    method: 'POST',
+    body: JSON.stringify({ title, horizon: 'task', category: 'general', priority: 2 }),
+  });
+  if (success) {
+    toast('已加入次要任務');
+    closeModal('task-modal');
+    loadTasks();
+  } else toast('新增失敗', true);
+}
+
+async function completeTask(id) {
+  const { success, data } = await apiFetch(`/goals/${id}/done`, { method: 'POST' });
+  if (!success) { toast('完成失敗', true); return; }
+  showXpBurst(data);
+  loadTasks();
+}
+
+async function deleteTask(id) {
+  const { success } = await apiFetch(`/goals/${id}`, { method: 'DELETE' });
+  if (success) { toast('已刪除'); loadTasks(); }
 }
 
 // ── 打卡提交 ──
