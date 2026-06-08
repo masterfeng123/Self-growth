@@ -21,16 +21,14 @@ interface WeeklyData {
 
 function getWeekRange(): { start: string; end: string } {
   const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-  monday.setHours(0, 0, 0, 0);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
-  sunday.setHours(23, 59, 59, 999);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(now);
+  start.setDate(now.getDate() - 6);
+  start.setHours(0, 0, 0, 0);
 
   const fmt = (d: Date) => d.toLocaleDateString('sv');
-  return { start: fmt(monday), end: fmt(sunday) };
+  return { start: fmt(start), end: fmt(end) };
 }
 
 function collectWeeklyData(): WeeklyData {
