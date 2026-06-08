@@ -407,18 +407,48 @@ function filterGoals(h) {
     h === 'all' ? '目標瀑布' : HORIZON[h]?.label || '目標';
 }
 
-function renderGoalsList(goals) {
-  const el = document.getElementById('goals-list');
-  if (!goals.length) {
-    el.innerHTML = '<div class="empty-state">這個層級還沒有目標。點擊右上角新增。</div>';
-    return;
-  }
+function _buildGoalCard(g) {
+  const h = g.horizon;
+  const statusLabel = { active: '進行中', completed: '已完成', paused: '暫停' }[g.status] || '進行中';
+  const statusClass  = { active: 'primary', completed: 'success', paused: 'warning' }[g.status] || 'primary';
+  const parentCrumb = g.parent_title
+    ? `<span class="goal-parent-crumb" style="color:${HORIZON[g.parent_horizon]?.color || '#9b8f80'}">
+        ${HORIZON[g.parent_horizon]?.short || ''} · ${g.parent_title}
+       </span>` : '';
+  const canAddChild = h !== '1wk';
+  const nextH = HORIZON_ORDER[HORIZON_ORDER.indexOf(h) + 1];
+  const isLife = h === 'life';
+  return `
+    <div class="card goal-card ${g.status === 'completed' ? 'goal-card-done' : ''} ${isLife ? 'goal-card-life' : ''}">
+      <div class="card-header">
+        <div style="flex:1;min-width:0">
+          ${parentCrumb}
+          <div class="card-title">${isLife ? '<span class="goal-life-crown">★</span>' : ''}${g.title}</div>
+          ${g.description ? `<div class="card-meta">${g.description}</div>` : ''}
+        </div>
+        <div class="actions">
+          <span class="badge badge-${statusClass}">${statusLabel}</span>
+          ${g.status !== 'completed' ? `<button class="btn btn-success btn-sm" onclick="completeGoal('${g.id}')">完成</button>` : ''}
+          ${canAddChild && nextH && g.status !== 'completed' ? `<button class="btn btn-sm" style="background:var(--surface2);color:var(--text-2);border:1px solid var(--border)" onclick="openGoalModal('${nextH}','${g.id}')">+ 子目標</button>` : ''}
+          <button class="btn btn-sm" style="background:var(--surface2);color:var(--text-2);border:1px solid var(--border)" onclick="editGoal('${g.id}')">編輯</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteGoal('${g.id}')">刪除</button>
+        </div>
+      </div>
+      ${h !== '10yr' && h !== '5yr' ? `
+        <div class="progress-bar"><div class="progress-bar-fill" style="width:${g.progress || 0}%"></div></div>
+        <div style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem">
+          進度 ${g.progress || 0}%
+          ${g.status !== 'completed' ? `<input type="range" min="0" max="100" value="${g.progress || 0}"
+            style="width:100px;margin-left:.5rem;vertical-align:middle;accent-color:var(--accent)"
+            onchange="updateProgress('${g.id}', this.value, this.parentElement.previousElementSibling.firstElementChild)">` : ''}
+        </div>` : ''}
+    </div>`;
+}
 
-  // 按 horizon 分組
+function _buildHorizonGroups(goals) {
   const groups = {};
   HORIZON_ORDER.forEach(h => { groups[h] = []; });
   goals.forEach(g => { if (groups[g.horizon]) groups[g.horizon].push(g); });
-
   let html = '';
   HORIZON_ORDER.forEach(h => {
     const list = groups[h];
@@ -426,48 +456,56 @@ function renderGoalsList(goals) {
     const hm = HORIZON[h];
     html += `<div class="horizon-group">
       <div class="horizon-label" style="color:${hm.color}">
-        <span class="horizon-dot" style="background:${hm.color}"></span>
-        ${hm.label}
+        <span class="horizon-dot" style="background:${hm.color}"></span>${hm.label}
       </div>`;
-    list.forEach(g => {
-      const statusLabel = { active: '進行中', completed: '已完成', paused: '暫停' }[g.status] || '進行中';
-      const statusClass = { active: 'primary', completed: 'success', paused: 'warning' }[g.status] || 'primary';
-      const parentCrumb = g.parent_title
-        ? `<span class="goal-parent-crumb" style="color:${HORIZON[g.parent_horizon]?.color || '#9b8f80'}">
-            ${HORIZON[g.parent_horizon]?.short || ''} · ${g.parent_title}
-           </span>` : '';
-      const canAddChild = h !== '1wk';
-      const nextH = HORIZON_ORDER[HORIZON_ORDER.indexOf(h) + 1];
-      const isLife = h === 'life';
-      html += `
-        <div class="card goal-card ${g.status === 'completed' ? 'goal-card-done' : ''} ${isLife ? 'goal-card-life' : ''}">
-          <div class="card-header">
-            <div style="flex:1;min-width:0">
-              ${parentCrumb}
-              <div class="card-title">${isLife ? '<span class="goal-life-crown">★</span>' : ''}${g.title}</div>
-              ${g.description ? `<div class="card-meta">${g.description}</div>` : ''}
-            </div>
-            <div class="actions">
-              <span class="badge badge-${statusClass}">${statusLabel}</span>
-              ${g.status !== 'completed' ? `<button class="btn btn-success btn-sm" onclick="completeGoal('${g.id}')">完成</button>` : ''}
-              ${canAddChild && nextH ? `<button class="btn btn-sm" style="background:var(--surface2);color:var(--text-2);border:1px solid var(--border)" onclick="openGoalModal('${nextH}','${g.id}')">+ 子目標</button>` : ''}
-              <button class="btn btn-sm" style="background:var(--surface2);color:var(--text-2);border:1px solid var(--border)" onclick="editGoal('${g.id}')">編輯</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteGoal('${g.id}')">刪除</button>
-            </div>
-          </div>
-          ${h !== '10yr' && h !== '5yr' ? `
-            <div class="progress-bar"><div class="progress-bar-fill" style="width:${g.progress || 0}%"></div></div>
-            <div style="font-size:.72rem;color:var(--text-muted);margin-top:.3rem">
-              進度 ${g.progress || 0}%
-              <input type="range" min="0" max="100" value="${g.progress || 0}"
-                style="width:100px;margin-left:.5rem;vertical-align:middle;accent-color:var(--accent)"
-                onchange="updateProgress('${g.id}', this.value, this.parentElement.previousElementSibling.firstElementChild)">
-            </div>` : ''}
-        </div>`;
-    });
+    list.forEach(g => { html += _buildGoalCard(g); });
     html += `</div>`;
   });
+  return html;
+}
+
+function renderGoalsList(goals) {
+  const el = document.getElementById('goals-list');
+  if (!goals.length) {
+    el.innerHTML = '<div class="empty-state">這個層級還沒有目標。點擊右上角新增。</div>';
+    return;
+  }
+
+  const active    = goals.filter(g => g.status !== 'completed');
+  const completed = goals.filter(g => g.status === 'completed');
+
+  let html = '';
+
+  // ── 未完成區 ──
+  if (active.length) {
+    html += _buildHorizonGroups(active);
+  } else {
+    html += '<div class="empty-state" style="margin-bottom:1rem">目前沒有進行中的目標。</div>';
+  }
+
+  // ── 已完成區（可折疊） ──
+  if (completed.length) {
+    html += `
+      <div class="goals-done-section">
+        <button class="goals-done-toggle" onclick="toggleDoneGoals(this)">
+          <span class="goals-done-toggle-arrow">▶</span>
+          已完成目標 <span class="badge badge-success" style="margin-left:.4rem">${completed.length}</span>
+        </button>
+        <div class="goals-done-body" style="display:none">
+          ${_buildHorizonGroups(completed)}
+        </div>
+      </div>`;
+  }
+
   el.innerHTML = html;
+}
+
+function toggleDoneGoals(btn) {
+  const body  = btn.nextElementSibling;
+  const arrow = btn.querySelector('.goals-done-toggle-arrow');
+  const open  = body.style.display === 'none';
+  body.style.display  = open ? 'block' : 'none';
+  arrow.textContent   = open ? '▼' : '▶';
 }
 
 // ── 目標 Modal（含 horizon picker）──
