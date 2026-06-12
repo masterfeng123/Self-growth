@@ -343,6 +343,16 @@ export async function generateWeeklyReport(): Promise<{ success: boolean; report
 
     console.log('[weeklyEval] 正在呼叫 Gemini API 生成週報...');
     const result = await model.generateContent(prompt);
+
+    // 記錄用量
+    try {
+      const usage = result.response.usageMetadata;
+      if (usage) {
+        db.prepare(`INSERT INTO api_usage_logs (id, service, tokens_in, tokens_out) VALUES (?, 'gemini', ?, ?)`)
+          .run(uuidv4(), usage.promptTokenCount ?? 0, usage.candidatesTokenCount ?? 0);
+      }
+    } catch {}
+
     const text = result.response.text().trim();
 
     let parsed: any;

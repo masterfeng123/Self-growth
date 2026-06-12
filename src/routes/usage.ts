@@ -8,7 +8,9 @@ const router = Router();
 function weekStart(): string {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - d.getDay() + 1); // Monday
+  // getDay()=0 是週日，視為第 7 天，避免算出下週一
+  const dow = d.getDay() || 7;
+  d.setDate(d.getDate() - dow + 1); // Monday
   return d.toLocaleDateString('sv');
 }
 

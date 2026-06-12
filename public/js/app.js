@@ -1753,9 +1753,12 @@ async function refreshClaudeUsage(silent = false) {
 
   if (!silent) { btn.classList.remove('spinning'); btn.disabled = false; }
 
-  // 5 分鐘後自動重新抓取（面板開著才 poll）
+  // 5 分鐘後自動重新抓取（面板開著才 poll，Gemini 同步一起刷新）
   clearTimeout(_claudePollTimer);
-  _claudePollTimer = setTimeout(() => { if (_usageOpen) refreshClaudeUsage(true); }, 5 * 60 * 1000);
+  _claudePollTimer = setTimeout(async () => {
+    if (!_usageOpen) return;
+    await loadUsage();
+  }, 5 * 60 * 1000);
 }
 
 // ════════════════════════════════════════
