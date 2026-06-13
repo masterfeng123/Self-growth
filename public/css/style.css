@@ -3007,27 +3007,32 @@ textarea { min-height: 100px; resize: vertical; }
 }
 .news-tab:hover:not(.active) { background: var(--surface2); color: var(--text); }
 
-.news-list { display: flex; flex-direction: column; gap: .75rem; }
+.news-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
 
 .news-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1rem 1.2rem;
+  padding: 1rem 1.1rem;
   display: flex;
   flex-direction: column;
-  gap: .45rem;
+  gap: .4rem;
   transition: box-shadow .15s, border-color .15s;
+  height: 100%;
 }
 .news-card:hover { box-shadow: var(--shadow-hover); border-color: var(--accent); }
 
 .news-card-top {
   display: flex;
   align-items: center;
-  gap: .6rem;
+  gap: .5rem;
 }
 .news-source-badge {
-  font-size: .68rem;
+  font-size: .65rem;
   font-weight: 600;
   padding: 2px 7px;
   border-radius: 10px;
@@ -3037,20 +3042,21 @@ textarea { min-height: 100px; resize: vertical; }
   flex-shrink: 0;
 }
 .news-source-badge.world { background: rgba(46,148,104,.1); color: var(--success); }
-.news-time { font-size: .72rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+.news-time { font-size: .7rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
 
 .news-title {
-  font-size: .95rem;
+  font-size: .9rem;
   font-weight: 600;
   color: var(--text);
   line-height: 1.45;
+  flex: 1;
 }
 .news-desc {
-  font-size: .82rem;
+  font-size: .8rem;
   color: var(--text-2);
   line-height: 1.55;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -3058,10 +3064,11 @@ textarea { min-height: 100px; resize: vertical; }
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  margin-top: .1rem;
+  margin-top: auto;
+  padding-top: .5rem;
 }
 .news-link-btn {
-  font-size: .78rem;
+  font-size: .76rem;
   color: var(--accent);
   text-decoration: none;
   font-weight: 500;
@@ -3073,8 +3080,13 @@ textarea { min-height: 100px; resize: vertical; }
 .news-link-btn:hover { background: var(--accent-dim); }
 
 .news-empty {
+  grid-column: 1 / -1;
   text-align: center;
   padding: 3rem 1rem;
   color: var(--text-muted);
   font-size: .9rem;
+}
+
+@media (max-width: 600px) {
+  .news-list { grid-template-columns: 1fr; }
 }
