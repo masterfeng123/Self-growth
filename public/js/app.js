@@ -55,6 +55,7 @@ document.querySelectorAll('nav a[data-page], .tab-btn[data-page]').forEach(link 
     if (page === 'projects')     loadProjects();
     if (page === 'debuglog')     loadDebugLogs();
     if (page === 'calendar')     loadCalendar();
+    if (page === 'news')         loadNews();
   });
 });
 
@@ -72,6 +73,7 @@ function navigateTo(page) {
   if (page === 'projects')     loadProjects();
   if (page === 'debuglog')     loadDebugLogs();
   if (page === 'calendar')     loadCalendar();
+  if (page === 'news')         loadNews();
 }
 
 function toast(msg, isError = false) {
@@ -2080,6 +2082,100 @@ async function deleteCalEvent() {
   await loadCalendar();
   if (prevDate && _calEvents[prevDate]) calSelectDay(prevDate);
 }
+
+// ════════════════════════════════════════
+//  新聞
+// ════════════════════════════════════════
+let _newsData = [];
+let _newsCat = 'all';
+
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1)   return '剛剛';
+  if (m < 60)  return `${m} 分前`;
+  const h = Math.floor(m / 60);
+  if (h < 24)  return `${h} 小時前`;
+  const d = Math.floor(h / 24);
+  return `${d} 天前`;
+}
+
+function renderNews() {
+  const list = document.getElementById('news-list');
+  if (!list) return;
+  const filtered = _newsCat === 'all' ? _newsData : _newsData.filter(a => a.category === _newsCat);
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="news-empty">暫無新聞，請點擊刷新重試</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(a => {
+    const isWorld = a.category === 'world';
+    return `<div class="news-card">
+      <div class="news-card-top">
+        <span class="news-source-badge${isWorld ? ' world' : ''}">${a.source}</span>
+        <span class="news-time">${timeAgo(a.pubDate)}</span>
+      </div>
+      <div class="news-title">${a.title}</div>
+      ${a.description ? `<div class="news-desc">${a.description}</div>` : ''}
+      <div class="news-card-footer">
+        <a class="news-link-btn" href="${a.link}" target="_blank" rel="noopener">閱讀全文 →</a>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadNews() {
+  const list = document.getElementById('news-list');
+  if (!list) return;
+  try {
+    const res = await apiFetch('/news');
+    if (res.success && res.articles) {
+      _newsData = res.articles;
+      const fetched = document.getElementById('news-fetched-at');
+      if (fetched && res.fetchedAt) {
+        fetched.textContent = '上次更新：' + new Date(res.fetchedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      }
+      renderNews();
+    } else {
+      list.innerHTML = '<div class="news-empty">載入失敗，請稍後再試</div>';
+    }
+  } catch {
+    list.innerHTML = '<div class="news-empty">連線失敗，請確認網路狀態</div>';
+  }
+}
+
+async function refreshNews() {
+  const btn = document.getElementById('news-refresh-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '更新中...'; }
+  const list = document.getElementById('news-list');
+  if (list) list.innerHTML = '<div class="loading-pulse">載入中...</div>';
+  try {
+    const res = await apiFetch('/news/refresh', { method: 'POST' });
+    if (res.success && res.articles) {
+      _newsData = res.articles;
+      const fetched = document.getElementById('news-fetched-at');
+      if (fetched && res.fetchedAt) {
+        fetched.textContent = '上次更新：' + new Date(res.fetchedAt).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+      }
+      renderNews();
+      toast('新聞已更新');
+    }
+  } catch {
+    toast('更新失敗', true);
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '↻ 刷新'; }
+}
+
+// 分類 tab 切換
+document.addEventListener('click', e => {
+  const tab = e.target.closest('.news-tab');
+  if (!tab) return;
+  document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  _newsCat = tab.dataset.cat;
+  renderNews();
+});
 
 // ════════════════════════════════════════
 //  初始化

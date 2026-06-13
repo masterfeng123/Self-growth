@@ -16,6 +16,7 @@ import debugLogsRouter from './routes/debugLogs';
 import aiRouter from './routes/ai';
 import usageRouter from './routes/usage';
 import calendarRouter from './routes/calendar';
+import newsRouter from './routes/news';
 import { startScheduler } from './modules/scheduler';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use('/api/debug-logs', debugLogsRouter);
 app.use('/api/ai', aiRouter);
 app.use('/api/usage', usageRouter);
 app.use('/api/calendar', calendarRouter);
+app.use('/api/news', newsRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

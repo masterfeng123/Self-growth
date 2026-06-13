@@ -20,6 +20,7 @@
   <a data-page="projects">專案</a>
   <a data-page="debuglog">Debug Log</a>
   <a data-page="calendar">行事曆</a>
+  <a data-page="news">新聞</a>
   <div id="nav-level" class="nav-level" style="display:none">
     <span id="nav-level-text"></span>
     <div class="nav-xp-track"><div id="nav-xp-fill" class="nav-xp-fill"></div></div>
@@ -412,6 +413,29 @@
           <div class="cal-empty" style="padding:2rem">尚無行程</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── 新聞頁 ── -->
+  <div id="news" class="page">
+    <div class="top-bar">
+      <h2>📰 世界動態</h2>
+      <button class="btn btn-sm" id="news-refresh-btn" onclick="refreshNews()">↻ 刷新</button>
+    </div>
+    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.2rem">
+      AI 科技 · 全球大事 · 每 30 分鐘自動更新
+      <span id="news-fetched-at" style="margin-left:.8rem"></span>
+    </p>
+
+    <!-- 分類 Tab -->
+    <div class="news-tab-bar">
+      <button class="news-tab active" data-cat="all">全部</button>
+      <button class="news-tab" data-cat="ai">🤖 AI / 科技</button>
+      <button class="news-tab" data-cat="world">🌍 全球大事</button>
+    </div>
+
+    <div id="news-list" class="news-list">
+      <div class="loading-pulse">載入新聞中...</div>
     </div>
   </div>
 
@@ -941,6 +965,10 @@
   <button class="tab-btn" data-page="calendar">
     <span class="tab-icon">📅</span>
     <span class="tab-label">行事曆</span>
+  </button>
+  <button class="tab-btn" data-page="news">
+    <span class="tab-icon">📰</span>
+    <span class="tab-label">新聞</span>
   </button>
 </div>
 
