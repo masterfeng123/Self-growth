@@ -2101,22 +2101,13 @@ function timeAgo(dateStr) {
   return `${d} 天前`;
 }
 
-// ── 週摘要側邊欄 ──
+// ── 新聞摘要側邊欄 ──
 async function loadWeeklySummary(force = false) {
   const content = document.getElementById('weekly-summary-content');
-  const statsEl = document.getElementById('summary-stats');
   if (!content) return;
   try {
-    const res = await apiFetch('/stats/weekly-summary' + (force ? '?force=1' : ''));
+    const res = await apiFetch('/news/summary' + (force ? '?force=1' : ''));
     if (!res.success) throw new Error(res.message);
-
-    // 快速統計
-    if (res.stats && statsEl) {
-      statsEl.style.display = 'grid';
-      document.getElementById('sum-habits').textContent = res.stats.habitLogs?.length ?? 0;
-      document.getElementById('sum-journals').textContent = res.stats.journals ?? 0;
-      document.getElementById('sum-xp').textContent = res.stats.totalXP ?? 0;
-    }
 
     content.textContent = res.text || '暫無摘要';
 

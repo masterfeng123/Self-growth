@@ -3042,37 +3042,6 @@ textarea { min-height: 100px; resize: vertical; }
 .sidebar-refresh-btn:hover { background: var(--surface2); color: var(--text); }
 .sidebar-refresh-btn:disabled { opacity: .4; cursor: default; }
 
-.summary-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: .4rem;
-  margin-bottom: .9rem;
-  padding-bottom: .9rem;
-  border-bottom: 1px solid var(--border);
-}
-
-.summary-stat-item {
-  text-align: center;
-  background: var(--surface2);
-  border-radius: 8px;
-  padding: .45rem .3rem;
-}
-
-.summary-stat-val {
-  display: block;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--accent);
-  line-height: 1.2;
-}
-
-.summary-stat-label {
-  display: block;
-  font-size: .65rem;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
 .summary-text {
   font-size: .82rem;
   color: var(--text-2);

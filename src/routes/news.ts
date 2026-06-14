@@ -127,6 +127,66 @@ async function getNews(force = false): Promise<Article[]> {
   return articles;
 }
 
+// ── 新聞摘要快取 ──
+let _summaryCache: { text: string; generatedAt: number; basedOn: number } | null = null;
+
+async function summarizeNews(articles: Article[]): Promise<string> {
+  const key = getGeminiKey();
+  if (!key || articles.length === 0) return '';
+
+  // 取前 20 篇標題 + 摘要給 Gemini 總結
+  const items = articles.slice(0, 20).map((a, i) =>
+    `${i + 1}. [${a.category === 'world' ? '全球' : 'AI科技'}] ${a.title}${a.description ? `：${a.description.slice(0, 80)}` : ''}`
+  ).join('\n');
+
+  const prompt = `以下是最新的國際新聞標題與摘要（共 ${articles.length > 20 ? 20 : articles.length} 篇），請用繁體中文寫一段 150~200 字的「本週新聞重點」。
+
+要求：
+- 純文字段落，不要用列表或標題
+- 分成 AI科技 和 全球大事 兩個面向各說一句重點
+- 語氣客觀簡潔，像新聞播報員在做週末回顧
+- 結尾一句點出整體趨勢或值得關注的方向
+
+新聞列表：
+${items}`;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${key}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+        signal: AbortSignal.timeout(25000),
+      }
+    );
+    if (!res.ok) return '';
+    const data: any = await res.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? '';
+  } catch {
+    return '';
+  }
+}
+
+// GET /api/news/summary
+router.get('/summary', async (_req: Request, res: Response) => {
+  try {
+    const force = _req.query.force === '1';
+    const articles = await getNews(); // 使用快取，不重新抓取
+    const basedOn = _cache?.fetchedAt ?? 0;
+
+    if (!force && _summaryCache && _summaryCache.basedOn === basedOn) {
+      return res.json({ success: true, text: _summaryCache.text, generatedAt: _summaryCache.generatedAt, cached: true });
+    }
+
+    const text = await summarizeNews(articles);
+    _summaryCache = { text, generatedAt: Date.now(), basedOn };
+    res.json({ success: true, text, generatedAt: _summaryCache.generatedAt });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /api/news
 router.get('/', async (_req: Request, res: Response) => {
   try {
