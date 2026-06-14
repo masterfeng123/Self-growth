@@ -417,26 +417,66 @@
   </div>
 
   <!-- ── 新聞頁 ── -->
-  <div id="news" class="page">
-    <div class="top-bar">
-      <h2>📰 世界動態</h2>
-      <button class="btn btn-sm" id="news-refresh-btn" onclick="refreshNews()">↻ 刷新</button>
-    </div>
-    <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.2rem">
-      AI 科技 · 全球大事 · 每 30 分鐘自動更新
-      <span id="news-fetched-at" style="margin-left:.8rem"></span>
-    </p>
+  <div id="news" class="page news-page-layout">
 
-    <!-- 分類 Tab -->
-    <div class="news-tab-bar">
-      <button class="news-tab active" data-cat="all">全部</button>
-      <button class="news-tab" data-cat="ai">🤖 AI / 科技</button>
-      <button class="news-tab" data-cat="world">🌍 全球大事</button>
+    <!-- 左欄：新聞 -->
+    <div class="news-main">
+      <div class="top-bar">
+        <h2>📰 世界動態</h2>
+        <button class="btn btn-sm" id="news-refresh-btn" onclick="refreshNews()">↻ 刷新</button>
+      </div>
+      <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:1.2rem">
+        AI 科技 · 全球大事 · 每 30 分鐘自動更新
+        <span id="news-fetched-at" style="margin-left:.8rem"></span>
+      </p>
+
+      <!-- 分類 Tab -->
+      <div class="news-tab-bar">
+        <button class="news-tab active" data-cat="all">全部</button>
+        <button class="news-tab" data-cat="ai">🤖 AI / 科技</button>
+        <button class="news-tab" data-cat="world">🌍 全球大事</button>
+      </div>
+
+      <div id="news-list" class="news-list">
+        <div class="loading-pulse">載入新聞中...</div>
+      </div>
     </div>
 
-    <div id="news-list" class="news-list">
-      <div class="loading-pulse">載入新聞中...</div>
-    </div>
+    <!-- 右欄：本週小結側邊欄 -->
+    <aside class="news-sidebar">
+      <div class="sidebar-card">
+        <div class="sidebar-card-header">
+          <div>
+            <div class="sidebar-card-title">本週小結</div>
+            <div class="sidebar-card-sub">過去 7 天的成長紀錄</div>
+          </div>
+          <button class="sidebar-refresh-btn" id="summary-refresh-btn" onclick="refreshWeeklySummary()" title="重新生成">↻</button>
+        </div>
+
+        <!-- 快速統計數字 -->
+        <div id="summary-stats" class="summary-stats" style="display:none">
+          <div class="summary-stat-item">
+            <span class="summary-stat-val" id="sum-habits">—</span>
+            <span class="summary-stat-label">習慣種類</span>
+          </div>
+          <div class="summary-stat-item">
+            <span class="summary-stat-val" id="sum-journals">—</span>
+            <span class="summary-stat-label">篇日記</span>
+          </div>
+          <div class="summary-stat-item">
+            <span class="summary-stat-val" id="sum-xp">—</span>
+            <span class="summary-stat-label">XP</span>
+          </div>
+        </div>
+
+        <div id="weekly-summary-content" class="summary-text">
+          <div class="loading-pulse" style="font-size:.82rem">摘要生成中...</div>
+        </div>
+
+        <div id="summary-generated-at" class="summary-generated-at" style="display:none"></div>
+      </div>
+    </aside>
+
   </div>
 
   <!-- ── 週報頁 ── -->
