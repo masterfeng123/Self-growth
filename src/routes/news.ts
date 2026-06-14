@@ -27,6 +27,14 @@ function stripHtml(s: string): string {
   return s.replace(/<[^>]*>/g, '').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim();
 }
 
+// 有些 RSS 欄位是 { "#text": "...", "@_type": "html" } 物件形式
+function extractText(val: any): string {
+  if (!val) return '';
+  if (typeof val === 'string') return val;
+  if (typeof val === 'object') return String(val['#text'] ?? val['_'] ?? val.content ?? '');
+  return String(val);
+}
+
 function getGeminiKey(): string | null {
   const keys = [
     process.env.GEMINI_API_KEY,
@@ -103,9 +111,9 @@ async function fetchFeed(feed: typeof FEEDS[0]): Promise<Article[]> {
       ? item.link
       : item.link?.['@_href'] ?? item.link?.['#text'] ?? '';
 
-    const desc = stripHtml(String(item.description ?? item.summary ?? item['media:description'] ?? '')).slice(0, 220);
-    const title = stripHtml(String(item.title ?? '')).slice(0, 160);
-    const pubDate = String(item.pubDate ?? item.published ?? item.updated ?? '');
+    const desc = stripHtml(extractText(item.description ?? item.summary ?? item['media:description'])).slice(0, 220);
+    const title = stripHtml(extractText(item.title)).slice(0, 160);
+    const pubDate = extractText(item.pubDate ?? item.published ?? item.updated);
 
     return { id: `${feed.id}-${i}`, title, link: String(link).trim(), description: desc, pubDate, source: feed.label, category: feed.category };
   }).filter(a => a.title && a.link);
