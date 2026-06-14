@@ -2985,7 +2985,7 @@ textarea { min-height: 100px; resize: vertical; }
 
 /* ── NEWS PAGE LAYOUT ── */
 .news-page-layout {
-  display: grid;
+  display: grid !important;
   grid-template-columns: 1fr 300px;
   gap: 1.5rem;
   align-items: start;
